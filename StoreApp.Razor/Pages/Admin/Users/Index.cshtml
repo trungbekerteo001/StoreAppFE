@@ -1,0 +1,112 @@
+﻿@page "/admin/users"
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-users.css" />
+}
+
+<div class="card">
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <h1 class="h1">User</h1>
+        </div>
+
+        <div class="toolbar-right">
+            <div class="search">
+                <input id="kw" type="text" placeholder="Tìm theo username / họ tên / role..." />
+                <button class="btn" type="button" onclick="usrSearch()">Tìm</button>
+                <button class="btn" type="button" onclick="usrClear()">Reset</button>
+            </div>
+            <button class="btn primary" type="button" onclick="usrOpenCreate()">+ Thêm</button>
+        </div>
+    </div>
+
+    <div id="usrMsg" class="msg" style="margin-top:10px; display:none"></div>
+
+    <div class="table-wrap" style="margin-top:12px">
+        <table class="table" id="usrTable">
+            <thead>
+                <tr>
+                    <th style="width:70px">#</th>
+                    <th style="min-width:160px">Username</th>
+                    <th style="min-width:220px">Họ tên</th>
+                    <th style="width:150px">SĐT</th>
+                    <th style="width:140px">Role</th>
+                    <th style="width:180px">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="usrTbody">
+                <tr><td colspan="6" class="muted">Chưa có dữ liệu.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Phân trang -->
+    <div class="usr-pager" id="usrPager">
+        <div class="usr-pager-right">
+            <button class="btn" type="button" id="usrPrevBtn" onclick="usrPrevPage()">← Trước</button>
+            <div class="usr-pager-info" id="usrPagerInfo">Trang 1 / 1</div>
+            <button class="btn" type="button" id="usrNextBtn" onclick="usrNextPage()">Sau →</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="usrModal" aria-hidden="true">
+    <div class="modal-panel">
+        <div class="modal-head">
+            <div>
+                <div class="modal-title" id="usrModalTitle">Thêm User</div>
+                <div class="modal-sub" id="usrModalSub">Tạo mới người dùng</div>
+            </div>
+            <button class="icon-btn" type="button" onclick="usrCloseModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-grid">
+                <label class="field">
+                    <span>Username</span>
+                    <input id="usrUserName" type="text" placeholder="vd: admin01" />
+                </label>
+
+                <label class="field">
+                    <span>Họ tên</span>
+                    <input id="usrFullName" type="text" placeholder="vd: Nguyễn Văn A" />
+                </label>
+
+                <label class="field">
+                    <span>SĐT</span>
+                    <input id="usrPhone" type="text" placeholder="vd: 098..." />
+                </label>
+
+                <label class="field">
+                    <span>Role</span>
+                    <select id="usrRole">
+                        <option value="Admin">Admin</option>
+                        <option value="Staff">Staff</option>
+                        <option value="Customer">Customer</option>
+                    </select>
+                </label>
+
+                <label class="field field-full">
+                    <span>Mật khẩu</span>
+                    <input id="usrPassword" type="password" placeholder="Nhập mật khẩu" />
+                    <div class="hint" id="usrPwdHint">(Để trống nếu không đổi mật khẩu)</div>
+                </label>
+            </div>
+
+            <div id="usrModalMsg" class="msg" style="margin-top:10px; display:none"></div>
+        </div>
+
+        <div class="modal-foot">
+            <button class="btn" type="button" onclick="usrCloseModal()">Hủy</button>
+            <button class="btn primary" type="button" id="usrSaveBtn" onclick="usrSave()">Lưu</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin.user.js"></script>
+}

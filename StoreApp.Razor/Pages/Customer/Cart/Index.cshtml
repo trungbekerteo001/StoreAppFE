@@ -1,0 +1,77 @@
+﻿@page "/customer/cart"
+@{
+    ViewData["Title"] = "Giỏ hàng";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/customer-cart.css" />
+}
+
+<div class="customer-cart-page">
+    <div class="cart-layout">
+        <div class="cart-main">
+            <div class="cart-head">
+                <div>
+                    <h2>Giỏ hàng của bạn</h2>
+                    <div class="muted">Sản phẩm được lưu ở localStorage</div>
+                </div>
+
+                <a class="btn-secondary small" href="/Customer">← Tiếp tục mua hàng</a>
+            </div>
+
+            <div id="cartMsg" class="msg" style="display:none"></div>
+
+            <div id="cartList">
+                <div class="empty-box">Đang tải giỏ hàng...</div>
+            </div>
+        </div>
+
+        <div class="cart-side">
+            <div class="summary-card">
+                <div class="summary-title">Tóm tắt đơn hàng</div>
+
+                <div class="summary-row">
+                    <span>Số loại sản phẩm</span>
+                    <strong id="sumItemKinds">0</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Tổng số lượng</span>
+                    <strong id="sumQuantity">0</strong>
+                </div>
+
+                <div class="summary-row total">
+                    <span>Tổng tiền</span>
+                    <strong id="sumAmount">0 đ</strong>
+                </div>
+
+                <button class="btn-secondary small summary-btn" type="button" onclick="cusCartClear()">
+                    Xóa toàn bộ giỏ hàng
+                </button>
+
+                <div class="order-form">
+                    <label class="field-label" for="orderAddress">Địa chỉ giao hàng</label>
+                    <input id="orderAddress" class="order-input" type="text" placeholder="Nhập địa chỉ giao hàng..." />
+
+                    <label class="field-label" for="paymentMethod">Phương thức thanh toán</label>
+                    <select id="paymentMethod" class="order-select">
+                        <option value="">-- Chọn phương thức thanh toán --</option>
+                        <option value="0">Tiền mặt</option>
+                        <option value="1">VNPay</option>
+                    </select>
+                </div>
+
+                <button class="btn-primary small summary-btn" type="button" onclick="cusCreateOrder()">
+                    Xác nhận đặt hàng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/customer.cart.js"></script>
+    <script>
+        authGuard(["Customer"]);
+    </script>
+}

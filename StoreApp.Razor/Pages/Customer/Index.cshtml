@@ -1,0 +1,69 @@
+﻿@page "/customer"
+@{
+    ViewData["Title"] = "Trang chủ khách hàng";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/customer-home.css" asp-append-version="true" />
+}
+
+<div class="customer-home">
+    <div class="customer-section">
+        <div class="section-head">
+            <div>
+                <h2>Danh sách sản phẩm</h2>
+                <div class="muted">Phân trang từ API Product</div>
+            </div>
+
+            <div class="product-toolbar">
+                <input id="prdKeyword" type="text" placeholder="Tìm theo tên sản phẩm..." />
+                <button class="btn-primary small" type="button" onclick="cusReloadProducts()">Tìm</button>
+            </div>
+        </div>
+
+        <div id="cusMsg" class="msg" style="display:none"></div>
+
+        <div id="productGrid" class="product-grid">
+            <div class="empty-box">Đang tải sản phẩm...</div>
+        </div>
+
+        <div class="pager" id="pager" style="display:none">
+            <button class="pager-btn" type="button" id="btnPrev" onclick="cusPrevPage()">← Trước</button>
+            <div class="pager-info" id="pagerInfo">Trang 1 / 1</div>
+            <button class="pager-btn" type="button" id="btnNext" onclick="cusNextPage()">Sau →</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal chi tiết sản phẩm -->
+<div class="modal" id="productDetailModal" aria-hidden="true">
+    <div class="modal-backdrop" onclick="cusCloseDetailModal()"></div>
+
+    <div class="modal-panel product-detail-modal" role="dialog" aria-modal="true">
+        <div class="modal-head">
+            <div class="modal-title">Chi tiết sản phẩm</div>
+            <button class="iconbtn" type="button" onclick="cusCloseDetailModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <div id="productDetailBody">
+                <div class="empty-box">Đang tải chi tiết...</div>
+            </div>
+
+            <div id="detailMsg" class="msg" style="display:none; margin-top:10px"></div>
+        </div>
+
+        <div class="modal-foot">
+            <button class="btn-secondary small" type="button" onclick="cusCloseDetailModal()">Đóng</button>
+            <button class="btn-primary small" type="button" id="btnAddToCart" onclick="cusAddCurrentToCart()">Thêm vào giỏ hàng</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/api.js"></script>
+    <script src="~/js/customer.home.js" asp-append-version="true"></script>
+    <script>
+        authGuard(["Customer"]);
+    </script>
+}

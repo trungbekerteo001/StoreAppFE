@@ -1,0 +1,93 @@
+﻿<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - StoreApp FE</title>
+
+    <link rel="stylesheet" href="~/css/site.css" />
+    <!-- Render css trang con nếu có -->
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <header class="topbar">
+        <div class="container topbar-inner">
+            <a id="brand" class="brand" href="/Auth/Login">StoreApp FE</a>
+
+            <nav class="nav" id="topbarAuthNav">
+                <a href="/Auth/Login">Đăng nhập</a>
+                <a href="/Auth/Register">Đăng ký</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Nội dung page con -->
+        @RenderBody()
+    </main>
+
+    <script src="~/js/config.js"></script>
+    <script src="~/js/auth.js"></script>
+    <script src="~/js/role.js"></script>
+    <script src="~/js/msg.js"></script>
+    <script src="~/js/api.js"></script>
+
+    <script>
+        (function () {
+            const nav = document.getElementById("topbarAuthNav");
+            const brand = document.getElementById("brand");
+            if (!nav) return;
+
+            const token = localStorage.getItem("accessToken");
+
+            if (token) {
+                const role = (typeof getRoleFromToken === "function")
+                    ? (getRoleFromToken(token) || "").toLowerCase()
+                    : "";
+
+                if (role === "customer") {
+                    if (brand) brand.href = "/customer";
+
+                    nav.innerHTML = `
+                        <a href="/customer/cart">Giỏ hàng</a>
+                        <a href="/customer/orders">Lịch sử đặt hàng</a>
+                        <button class="linklike" type="button" onclick="authLogout()">Đăng xuất</button>
+                    `;
+                }
+                else if (role === "staff") {
+                    if (brand) brand.href = "/staff";
+
+                    nav.innerHTML = `
+                        <a href="/staff">Quản lý order</a>
+                        <button class="linklike" type="button" onclick="authLogout()">Đăng xuất</button>
+                    `;
+                }
+                else if (role === "admin") {
+                    if (brand) brand.href = "/admin";
+
+                    nav.innerHTML = `
+                        <a href="/admin">Admin</a>
+                        <button class="linklike" type="button" onclick="authLogout()">Đăng xuất</button>
+                    `;
+                }
+                else {
+                    if (brand) brand.href = "/Auth/Login";
+
+                    nav.innerHTML = `
+                        <button class="linklike" type="button" onclick="authLogout()">Đăng xuất</button>
+                    `;
+                }
+            } else {
+                if (brand) brand.href = "/Auth/Login";
+
+                nav.innerHTML = `
+                    <a href="/Auth/Login">Đăng nhập</a>
+                    <a href="/Auth/Register">Đăng ký</a>
+                `;
+            }
+        })();
+        </script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

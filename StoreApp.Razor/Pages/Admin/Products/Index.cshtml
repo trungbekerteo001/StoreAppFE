@@ -1,0 +1,130 @@
+﻿@page "/admin/products"
+@{
+    ViewData["Title"] = "Quản lý sản phẩm";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-products.css" />
+}
+
+<div class="card">
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <h1 class="h1">Product</h1>
+            <div class="muted">Lọc theo Category / Giá / Keyword</div>
+        </div>
+
+        <div class="toolbar-right">
+            <div class="filters">
+                <select id="catFilter" aria-label="Lọc theo category">
+                    <option value="">-- Tất cả Category --</option>
+                </select>
+
+                <input id="minPrice" type="number" inputmode="decimal" step="0.01" placeholder="Giá từ" />
+                <input id="maxPrice" type="number" inputmode="decimal" step="0.01" placeholder="Giá đến" />
+
+                <input id="kw" type="text" placeholder="Tìm theo keyword..." />
+                <button class="btn" type="button" onclick="prodSearch()">Tìm</button>
+                <button class="btn" type="button" onclick="prodClear()">Reset</button>
+            </div>
+
+            <button class="btn primary" type="button" onclick="prodOpenCreate()">+ Thêm</button>
+        </div>
+    </div>
+
+    <div id="prodMsg" class="msg" style="margin-top:10px; display:none"></div>
+
+    <div class="table-wrap" style="margin-top:12px">
+        <table class="table" id="prodTable">
+            <thead>
+                <tr>
+                    <th style="width:70px">#</th>
+                    <th>Tên sản phẩm</th>
+                    <th style="width:250px">Ảnh</th>
+                    <th style="width:180px">Category</th>
+                    <th style="width:180px">Supplier</th>
+                    <th style="width:110px">Quantity</th>
+                    <th style="width:140px">Giá</th>
+                    <th style="width:180px">Create_at</th>
+                    <th style="width:220px">Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="prodTbody">
+                <tr><td colspan="7" class="muted">Đang tải...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Phân trang -->
+    <div class="prod-pager" id="prodPager">
+        <div class="prod-pager-right">
+            <button class="btn" type="button" id="prodPrevBtn" onclick="prodPrevPage()">← Trước</button>
+            <div class="prod-pager-info" id="prodPagerInfo">Trang 1 / 1</div>
+            <button class="btn" type="button" id="prodNextBtn" onclick="prodNextPage()">Sau →</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="prodModal" aria-hidden="true">
+    <div class="modal-backdrop" onclick="prodCloseModal()"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true">
+        <div class="modal-head">
+            <div class="modal-title" id="prodModalTitle">Thêm Product</div>
+            <button class="iconbtn" type="button" onclick="prodCloseModal()" aria-label="Đóng">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-grid">
+                <label class="field">
+                    <span>Tên sản phẩm</span>
+                    <input id="prodName" type="text" placeholder="Ví dụ: Sữa tươi 1L" />
+                </label>
+
+                <label class="field">
+                    <span>Category</span>
+                    <select id="prodCategoryId"></select>
+                </label>
+
+                <label class="field">
+                    <span>Supplier</span>
+                    <select id="prodSupplierId"></select>
+                </label>
+
+                <label class="field">
+                    <span>Giá</span>
+                    <input id="prodPrice" type="number" inputmode="decimal" step="0.01" placeholder="0" />
+                </label>
+
+
+                <div class="field field-full">
+                    <span>Upload ảnh (tuỳ chọn)</span>
+                    <div class="upload-row">
+                        <input id="prodImageFile" type="file" accept="image/*" />
+                        <button class="btn" type="button" onclick="prodUploadImage()">Upload</button>
+                        <button class="btn" type="button" onclick="prodClearImage()">Xoá ảnh</button>
+                    </div>
+                    <div class="muted" style="margin-top:6px">
+                        Ảnh sẽ được upload lên server và tự sinh URL.
+                    </div>
+                </div>
+
+                <div class="field field-full">
+                    <span>Xem trước</span>
+                    <div class="preview" id="prodPreview">Chưa có ảnh.</div>
+                </div>
+            </div>
+
+            <div id="prodModalMsg" class="msg" style="margin-top:10px; display:none"></div>
+        </div>
+
+        <div class="modal-foot">
+            <button class="btn" type="button" onclick="prodCloseModal()">Hủy</button>
+            <button class="btn primary" type="button" id="prodSaveBtn" onclick="prodSave()">Lưu</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin.product.js"></script>
+}

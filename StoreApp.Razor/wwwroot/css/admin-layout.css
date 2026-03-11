@@ -1,0 +1,97 @@
+/* Admin layout bám theo theme hiện có trong site.css (dark) */
+
+:root{
+  --sb-w: 260px;
+  --shadow: 0 14px 36px rgba(0,0,0,.35);
+}
+
+.admin-shell{
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: var(--sb-w) 1fr;
+}
+
+.admin-sidebar{
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: rgba(15, 27, 51, 0.92);
+  border-right: 1px solid var(--line);
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-badge{
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.14);
+  color: var(--muted);
+}
+
+.admin-nav{ display: flex; flex-direction: column; gap: 6px; padding: 6px; }
+
+.admin-nav-group{
+  margin: 10px 8px 6px;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .8px;
+}
+
+.admin-nav-item{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--muted);
+  border: 1px solid transparent;
+}
+
+.admin-nav-item:hover{
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  border-color: rgba(255,255,255,.08);
+}
+
+.admin-sidebar-footer{
+  margin-top: auto;
+  padding: 12px 6px 6px;
+}
+
+.admin-main{ min-width: 0; }
+
+.iconbtn{
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.iconbtn:hover{ background: rgba(255,255,255,.10); }
+
+.link{
+  color: var(--muted);
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.link:hover{ background: rgba(255,255,255,.06); color: var(--text); }
+
+.admin-content{ padding: 16px; }
+
+.admin-overlay{
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 30;
+}

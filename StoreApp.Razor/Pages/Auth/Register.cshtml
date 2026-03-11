@@ -1,0 +1,43 @@
+@page
+@{
+    ViewData["Title"] = "Đăng ký";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/auth.css"/>
+}
+
+<div class="auth-wrap">
+    <div class="card">
+        <h1>Đăng ký</h1>
+        <p>Tạo tài khoản mới theo API hiện có.</p>
+
+        <form class="form" onsubmit="return authRegister(event)">
+            <div class="field">
+                <label>Tên đăng nhập</label>
+                <input id="rUserName" autocomplete="username" required />
+            </div>
+
+            <div class="field">
+                <label>Họ và tên</label>
+                <input id="rFullName" autocomplete="name" required />
+            </div>
+
+            <div class="row">
+                <div class="field">
+                    <label>Mật khẩu</label>
+                    <input id="rPassword" type="password" autocomplete="new-password" required />
+                </div>
+                <div class="field">
+                    <label>Số điện thoại</label>
+                    <input id="rPhone" autocomplete="tel" required />
+                </div>
+            </div>
+
+            <button class="btn" type="submit">Đăng ký</button>
+            <a class="btn secondary" href="/Auth/Login">Quay lại đăng nhập</a>
+
+            <div id="registerMsg" class="msg" style="display: none"></div>
+        </form>
+    </div>
+</div>

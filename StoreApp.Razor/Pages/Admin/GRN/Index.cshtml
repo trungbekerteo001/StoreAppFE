@@ -1,0 +1,137 @@
+﻿@page "/admin/grn"
+@{
+    ViewData["Title"] = "Quản lý phiếu nhập";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-grn.css" />
+}
+
+<div class="card">
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <h1 class="h1">GRN</h1>
+            <div class="muted">Quản lý phiếu nhập kho: tạo, sửa, duyệt và hủy</div>
+        </div>
+
+        <div class="toolbar-right">
+            <div class="filters">
+                <select id="grnSupplierFilter" aria-label="Lọc theo supplier">
+                    <option value="">-- Tất cả Supplier --</option>
+                </select>
+
+                <select id="grnStatusFilter" aria-label="Lọc theo trạng thái">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Canceled">Canceled</option>
+                </select>
+
+                <button class="btn" type="button" onclick="grnSearch()">Tìm</button>
+                <button class="btn" type="button" onclick="grnClear()">Reset</button>
+            </div>
+
+            <button class="btn primary" type="button" onclick="grnOpenCreate()">+ Thêm phiếu nhập</button>
+        </div>
+    </div>
+
+    <div id="grnMsg" class="msg" style="margin-top:10px; display:none"></div>
+
+    <div class="table-wrap" style="margin-top:12px">
+        <table class="table" id="grnTable">
+            <thead>
+                <tr>
+                    <th style="width:72px">#</th>
+                    <th style="width:220px">Mã phiếu</th>
+                    <th>Supplier</th>
+                    <th style="width:140px">Trạng thái</th>
+                    <th style="width:110px">Số dòng</th>
+                    <th style="width:130px">Tổng SL</th>
+                    <th style="width:160px">Tổng tiền</th>
+                    <th style="width:180px">Cập nhật</th>
+                    <th style="width:320px">Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="grnTbody">
+                <tr><td colspan="9" class="muted">Đang tải...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="grn-pager" id="grnPager">
+        <div class="grn-pager-right">
+            <button class="btn" type="button" id="grnPrevBtn" onclick="grnPrevPage()">← Trước</button>
+            <div class="grn-pager-info" id="grnPagerInfo">Trang 1 / 1</div>
+            <button class="btn" type="button" id="grnNextBtn" onclick="grnNextPage()">Sau →</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="grnModal" aria-hidden="true">
+    <div class="modal-backdrop" onclick="grnCloseModal()"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true">
+        <div class="modal-head">
+            <div>
+                <div class="modal-title" id="grnModalTitle">Thêm phiếu nhập</div>
+                <div class="modal-sub" id="grnModalSub">Chọn supplier và khai báo các mặt hàng nhập kho.</div>
+            </div>
+            <button class="iconbtn" type="button" onclick="grnCloseModal()" aria-label="Đóng">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-grid">
+                <label class="field field-full">
+                    <span>Supplier</span>
+                    <select id="grnSupplierId"></select>
+                </label>
+            </div>
+
+            <div class="items-head">
+                <div class="items-title">Danh sách sản phẩm</div>
+                <button class="btn" type="button" id="grnAddRowBtn" onclick="grnAddItemRow()">+ Thêm dòng</button>
+            </div>
+
+            <div class="table-wrap inner-table-wrap">
+                <table class="table inner-table">
+                    <thead>
+                        <tr>
+                            <th style="width:52px">#</th>
+                            <th>Sản phẩm</th>
+                            <th style="width:130px">Số lượng</th>
+                            <th style="width:150px">Đơn giá nhập</th>
+                            <th style="width:160px">Thành tiền</th>
+                            <th style="width:80px"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="grnItemsTbody"></tbody>
+                </table>
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-box">
+                    <div class="summary-label">Số dòng</div>
+                    <div class="summary-value" id="grnSummaryLines">0</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-label">Tổng số lượng</div>
+                    <div class="summary-value" id="grnSummaryQty">0</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-label">Tổng tiền</div>
+                    <div class="summary-value" id="grnSummaryAmount">0 ₫</div>
+                </div>
+            </div>
+
+            <div id="grnModalMsg" class="msg" style="margin-top:10px; display:none"></div>
+        </div>
+
+        <div class="modal-foot">
+            <button class="btn" type="button" onclick="grnCloseModal()">Đóng</button>
+            <button class="btn primary" type="button" id="grnSaveBtn" onclick="grnSave()">Lưu</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin.grn.js"></script>
+}

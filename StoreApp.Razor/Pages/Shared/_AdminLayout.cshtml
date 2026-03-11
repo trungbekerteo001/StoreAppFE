@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Admin - StoreApp</title>
+
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/admin-layout.css" />
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <div class="admin-shell" id="adminShell">
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div>
+                <span class="admin-badge">ADMIN</span>
+            </div>
+
+            <nav class="admin-nav" aria-label="Admin navigation">
+                <div class="admin-nav-group">Danh sách quản lý</div>
+                <a class="admin-nav-item" data-nav="/admin/categories" href="/admin/categories">Category</a>
+                <a class="admin-nav-item" data-nav="/admin/suppliers" href="/admin/suppliers">Supplier</a>
+                <a class="admin-nav-item" data-nav="/admin/products" href="/admin/products">Product</a>
+                <a class="admin-nav-item" data-nav="/admin/grn" href="/admin/grn">GRN</a>
+                <a class="admin-nav-item" data-nav="/admin/users" href="/admin/users">User</a>
+
+                <div class="admin-nav-group">Khác</div>
+                <a class="admin-nav-item" data-nav="/" href="/">Cái gì đó khác</a>
+            </nav>
+
+            <div class="admin-sidebar-footer">
+                <button class="btn" type="button" onclick="authLogout()">Đăng xuất</button>
+            </div>
+        </aside>
+
+        <div class="admin-main">
+            <main class="admin-content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="~/js/config.js"></script>
+    <script src="~/js/api.js"></script>
+    <script src="~/js/msg.js"></script>
+    <script src="~/js/auth.js"></script>
+    <script src="~/js/role.js"></script>
+    
+    <script>
+        // Guard toàn bộ khu vực /Admin
+        authGuard(["admin"]);
+    </script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,142 @@
+﻿@page "/staff"
+@{
+    ViewData["Title"] = "Quản lý order";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/staff-orders.css" />
+}
+
+<div class="card">
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <h1 class="h1">Order</h1>
+            <div class="muted">Staff quản lý đơn hàng: xem chi tiết, xác nhận, giao hàng, hủy đơn</div>
+        </div>
+
+        <div class="toolbar-right">
+            <button class="btn" type="button" onclick="ordRefresh()">Tải lại</button>
+        </div>
+    </div>
+
+    <div id="ordMsg" class="msg" style="margin-top:10px; display:none"></div>
+
+    <div class="table-wrap" style="margin-top:12px">
+        <table class="table" id="ordTable">
+            <thead>
+                <tr>
+                    <th style="width:72px">#</th>
+                    <th style="width:220px">Mã đơn</th>
+                    <th style="width:160px">Customer</th>
+                    <th style="width:120px">Thanh toán</th>
+                    <th style="width:140px">Trạng thái</th>
+                    <th style="width:100px">Số dòng</th>
+                    <th style="width:150px">Tổng tiền</th>
+                    <th style="width:180px">Cập nhật</th>
+                    <th style="width:320px">Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="ordTbody">
+                <tr><td colspan="9" class="muted">Đang tải...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="ord-pager" id="ordPager">
+        <div class="ord-pager-right">
+            <button class="btn" type="button" id="ordPrevBtn" onclick="ordPrevPage()">← Trước</button>
+            <div class="ord-pager-info" id="ordPagerInfo">Trang 1 / 1</div>
+            <button class="btn" type="button" id="ordNextBtn" onclick="ordNextPage()">Sau →</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="ordModal" aria-hidden="true">
+    <div class="modal-backdrop" onclick="ordCloseModal()"></div>
+
+    <div class="modal-panel" role="dialog" aria-modal="true">
+        <div class="modal-head">
+            <div>
+                <div class="modal-title">Chi tiết đơn hàng</div>
+                <div class="modal-sub">Xem thông tin và xử lý trạng thái đơn hàng</div>
+            </div>
+            <button class="iconbtn" type="button" onclick="ordCloseModal()" aria-label="Đóng">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="meta-grid">
+                <div class="meta-box">
+                    <div class="meta-label">Order Id</div>
+                    <div class="meta-value mono" id="ordViewId">-</div>
+                </div>
+
+                <div class="meta-box">
+                    <div class="meta-label">Customer Id</div>
+                    <div class="meta-value mono" id="ordViewCustomerId">-</div>
+                </div>
+
+                <div class="meta-box">
+                    <div class="meta-label">Staff Id</div>
+                    <div class="meta-value mono" id="ordViewStaffId">-</div>
+                </div>
+
+                <div class="meta-box">
+                    <div class="meta-label">Thanh toán</div>
+                    <div class="meta-value" id="ordViewPayment">-</div>
+                </div>
+
+                <div class="meta-box">
+                    <div class="meta-label">Trạng thái</div>
+                    <div class="meta-value" id="ordViewStatus">-</div>
+                </div>
+
+                <div class="meta-box">
+                    <div class="meta-label">Cập nhật</div>
+                    <div class="meta-value" id="ordViewUpdatedAt">-</div>
+                </div>
+
+                <div class="meta-box meta-box-full">
+                    <div class="meta-label">Địa chỉ giao hàng</div>
+                    <div class="meta-value" id="ordViewAddress">-</div>
+                </div>
+
+                <div class="meta-box meta-box-full">
+                    <div class="meta-label">Tổng tiền</div>
+                    <div class="meta-value total-amount" id="ordViewTotal">0 ₫</div>
+                </div>
+            </div>
+
+            <div class="section-title">Chi tiết sản phẩm</div>
+
+            <div class="table-wrap inner-table-wrap">
+                <table class="table inner-table">
+                    <thead>
+                        <tr>
+                            <th style="width:70px">#</th>
+                            <th>Sản phẩm</th>
+                            <th style="width:110px">Số lượng</th>
+                            <th style="width:150px">Đơn giá</th>
+                            <th style="width:160px">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordItemsTbody">
+                        <tr><td colspan="5" class="muted">Không có dữ liệu.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="ordModalMsg" class="msg" style="margin-top:12px; display:none"></div>
+        </div>
+
+        <div class="modal-foot">
+            <button class="btn" type="button" onclick="ordCloseModal()">Đóng</button>
+            <button class="btn primary" type="button" id="ordConfirmBtn" onclick="ordConfirmCurrent()">Xác nhận</button>
+            <button class="btn primary" type="button" id="ordDeliverBtn" onclick="ordDeliverCurrent()">Giao hàng</button>
+            <button class="btn danger" type="button" id="ordCancelBtn" onclick="ordCancelCurrent()">Hủy đơn</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/staff.order.js"></script>
+}

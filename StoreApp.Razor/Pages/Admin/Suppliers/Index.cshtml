@@ -1,0 +1,91 @@
+﻿@page "/admin/suppliers"
+@{
+    ViewData["Title"] = "Quản lý nhà cung cấp";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-suppliers.css" />
+}
+
+<div class="card">
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <h1 class="h1">Suppliers</h1>
+        </div>
+
+        <div class="toolbar-right">
+            <div class="search">
+                <input id="kw" type="text" placeholder="Tìm theo keyword..." />
+                <button class="btn" type="button" onclick="supSearch()">Tìm</button>
+                <button class="btn" type="button" onclick="supClear()">Reset</button>
+            </div>
+            <button class="btn primary" type="button" onclick="supOpenCreate()">+ Thêm</button>
+        </div>
+    </div>
+
+    <div id="supMsg" class="msg" style="margin-top:10px; display:none"></div>
+
+    <div class="table-wrap" style="margin-top:12px">
+        <table class="table" id="supTable">
+            <thead>
+                <tr>
+                    <th style="width:70px">#</th>
+                    <th style="min-width:220px">Tên NCC</th>
+                    <th style="width:160px">SĐT</th>
+                    <th style="min-width:220px">Email</th>
+                    <th style="min-width:260px">Địa chỉ</th>
+                    <th style="width:220px">Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="supTbody">
+                <tr><td colspan="6" class="muted">Đang tải...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="supModal" aria-hidden="true">
+    <div class="modal-backdrop" onclick="supCloseModal()"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true">
+        <div class="modal-head">
+            <div class="modal-title" id="supModalTitle">Thêm Supplier</div>
+            <button class="iconbtn" type="button" onclick="supCloseModal()" aria-label="Đóng">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-grid">
+                <label class="field">
+                    <span>Tên nhà cung cấp *</span>
+                    <input id="supName" type="text" placeholder="Ví dụ: Công ty ABC" />
+                </label>
+
+                <label class="field">
+                    <span>Số điện thoại</span>
+                    <input id="supPhone" type="text" placeholder="Ví dụ: 09xxxxxxxx" />
+                </label>
+
+                <label class="field">
+                    <span>Email</span>
+                    <input id="supEmail" type="text" placeholder="Ví dụ: abc@email.com" />
+                </label>
+
+                <label class="field">
+                    <span>Địa chỉ</span>
+                    <input id="supAddress" type="text" placeholder="Ví dụ: Hà Nội" />
+                </label>
+            </div>
+
+            <div id="supModalMsg" class="msg" style="margin-top:10px; display:none"></div>
+        </div>
+
+        <div class="modal-foot">
+            <button class="btn" type="button" onclick="supCloseModal()">Huỷ</button>
+            <button class="btn primary" type="button" id="supSaveBtn" onclick="supSave()">Lưu</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin.supplier.js"></script>
+}
