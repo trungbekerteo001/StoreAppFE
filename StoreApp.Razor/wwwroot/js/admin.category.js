@@ -127,8 +127,14 @@ async function catSave() {
         return;
     }
 
-    if (!result.res.ok) {   // nếu API trả về lỗi (như 400, 500)
-        showMsg('catModalMsg', result.data?.detail || result.data?.message || result.raw || `HTTP ${result.res.status}`, 'error');
+    if (!result.res.ok) {
+        // nếu API trả về lỗi (như 400, 500)
+        if (result.data && result.data.errors) {  // nếu có lỗi từ model validation)
+            const errors = Object.values(result.data.errors).flat();   // lấy tất cả lỗi vào 1 mảng
+            showMsg('catModalMsg', errors.join('\n'), 'error');        // hiển thị tất cả lỗi trong modal, cách nhau bởi dấu cách
+        } else(result.data && result.data.detail) {
+            showMsg('catModalMsg', result.data.detail, 'error');        // nếu có lỗi chi tiết thì hiển thị lỗi chi tiết trong modal
+        }
         return;
     }
 
