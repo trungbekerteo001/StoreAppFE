@@ -101,7 +101,7 @@ async function prodLoad(clearMsg = true) {
     }
 
     if (!result.res.ok) {                                   // API trả lỗi HTTP (400/401/500...)
-        showMsg('prodMsg', result.data?.detail || result.data?.message || result.raw || `HTTP ${result.res.status}`, 'error');
+        showMsg('prodMsg', getApiErrorText(result), 'error');
         if (tb) tb.innerHTML = `<tr><td colspan="7" class="muted">Lỗi tải dữ liệu.</td></tr>`;
         return;
     }
@@ -381,7 +381,7 @@ async function prodSave() {
     }
 
     if (!result.res.ok) {                                           // API trả lỗi (400/401/500...)
-        showMsg('prodModalMsg', result.data?.detail || result.data?.message || result.raw || `HTTP ${result.res.status}`, 'error');
+        showMsg('prodModalMsg', getApiErrorText(result), 'error');
         return;
     }
 
@@ -410,7 +410,7 @@ async function prodDelete(id) {
     }
 
     if (!result.res.ok) {
-        showMsg('prodMsg', result.data?.detail || result.data?.message || result.raw || `HTTP ${result.res.status}`, 'error');
+        showMsg('prodMsg', getApiErrorText(result), 'error');
         return;
     }
 
@@ -453,7 +453,7 @@ async function prodUploadImage() {
         if (raw) { try { data = JSON.parse(raw); } catch { } }      // parse JSON nếu có
 
         if (!res.ok) {                                              // upload lỗi
-            showMsg('prodModalMsg', (data?.detail || data?.message || raw || `HTTP ${res.status}`), 'error');
+            showMsg('prodModalMsg', data?.detail || data?.message || 'Có lỗi xảy ra.', 'error');
             return;
         }
 

@@ -23,10 +23,7 @@ async function supLoad(clearMsg = true) {       // lần đầu gọi thì clear
     }
 
     if (!result.res.ok) { // API tre về lỗi (như 400, 500)
-        showMsg('supMsg',
-            result.data?.detail || result.data?.message || result.raw || `HTTP ${result.res.status}`,
-            'error'
-        );
+        showMsg('supMsg', getApiErrorText(result), 'error');
         if (tb) tb.innerHTML = `<tr><td colspan="6" class="muted">Lỗi tải dữ liệu.</td></tr>`;
         return;
     }
@@ -153,10 +150,7 @@ async function supSave() {
     }
 
     if (!result.res.ok) {   // nếu API trả về lỗi (như 400, 500)
-        showMsg('supModalMsg',
-            result.data?.detail || result.data?.message || result.raw || `HTTP ${result.res.status}`,
-            'error'
-        );
+        showMsg('supModalMsg', getApiErrorText(result), 'error');
         return;
     }
 
@@ -185,10 +179,7 @@ async function supDelete(id) {
     }
 
     if (!result.res.ok) {   // nếu API trả về lỗi (như 400, 500)
-        showMsg('supMsg',
-            result.data?.detail || result.data?.message || result.raw || `HTTP ${result.res.status}`,
-            'error'
-        );
+        showMsg('supMsg', getApiErrorText(result), 'error');
         return;
     }
 

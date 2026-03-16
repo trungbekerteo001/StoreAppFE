@@ -22,8 +22,8 @@ async function catLoad(clearMsg = true) {       // lần đầu gọi thì clear
         return;
     }
 
-    if (!result.res.ok) { // API tre về lỗi (như 400, 500)
-        showMsg('catMsg', result.data?.detail || result.data?.message || result.raw || `HTTP ${result.res.status}`, 'error');
+    if (!result.res.ok) { // API trả về lỗi (như 400, 500)
+        showMsg('catMsg', getApiErrorText(result), 'error');
         if (tb) tb.innerHTML = `<tr><td colspan="3" class="muted">Lỗi tải dữ liệu.</td></tr>`;
         return;
     }
@@ -128,13 +128,7 @@ async function catSave() {
     }
 
     if (!result.res.ok) {
-        // nếu API trả về lỗi (như 400, 500)
-        if (result.data && result.data.errors) {  // nếu có lỗi từ model validation)
-            const errors = Object.values(result.data.errors).flat();   // lấy tất cả lỗi vào 1 mảng
-            showMsg('catModalMsg', errors.join('\n'), 'error');        // hiển thị tất cả lỗi trong modal, cách nhau bởi dấu cách
-        } else(result.data && result.data.detail) {
-            showMsg('catModalMsg', result.data.detail, 'error');        // nếu có lỗi chi tiết thì hiển thị lỗi chi tiết trong modal
-        }
+        showMsg('catModalMsg', getApiErrorText(result), 'error');
         return;
     }
 
@@ -163,7 +157,7 @@ async function catDelete(id) {
     }
 
     if (!result.res.ok) {   // nếu API trả về lỗi (như 400, 500)
-        showMsg('catMsg', result.data?.detail || result.data?.message || result.raw || `HTTP ${result.res.status}`, 'error');
+        showMsg('catMsg', getApiErrorText(result), 'error');
         return;
     }
 

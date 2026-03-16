@@ -34,10 +34,7 @@ async function usrLoad(clearMsg = true) {       // lần đầu gọi thì clear
     }
 
     if (!result.res.ok) { // API trả về lỗi (như 400, 500)
-        showMsg('usrMsg',
-            result.data?.detail || result.data?.message || result.raw || `HTTP ${result.res.status}`,
-            'error'
-        );
+        showMsg('usrMsg', getApiErrorText(result), 'error');
         if (tb) tb.innerHTML = `<tr><td colspan="6" class="muted">Lỗi tải dữ liệu.</td></tr>`;
         return;
     }
@@ -202,10 +199,7 @@ async function usrSave() {
         }
 
         if (!result.res.ok) {   // nếu API trả về lỗi (như 400, 500)
-            showMsg('usrModalMsg',
-                result.data?.detail || result.data?.message || result.raw || `HTTP ${result.res.status}`,
-                'error'
-            );
+            showMsg('usrModalMsg', getApiErrorText(result), 'error');
             return;
         }
 
@@ -234,10 +228,7 @@ async function usrDelete(id) {
     }
 
     if (!result.res.ok) {   // nếu API trả về lỗi (như 400, 500)
-        showMsg('usrMsg',
-            result.data?.detail || result.data?.message || result.raw || `HTTP ${result.res.status}`,
-            'error'
-        );
+        showMsg('usrMsg', getApiErrorText(result), 'error');
         return;
     }
 
