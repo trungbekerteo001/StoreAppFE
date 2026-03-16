@@ -38,6 +38,18 @@
             <a class="btn secondary" href="/Auth/Login">Quay lại đăng nhập</a>
 
             <div id="registerMsg" class="msg" style="display: none"></div>
+
+            <div id="otpBox" class="form" style="display:none; margin-top:14px;">
+                <div class="field">
+                    <label>Mã OTP</label>
+                    <input id="otpCode" maxlength="6" inputmode="numeric" placeholder="Nhập mã OTP" />
+                </div>
+
+                <button class="btn" type="button" onclick="authVerifyOtp()">Xác thực OTP</button>
+                <button class="btn secondary" type="button" onclick="authResendOtp()">Gửi lại OTP</button>
+
+                <div id="otpMsg" class="msg" style="display:none"></div>
+            </div>
         </form>
     </div>
 </div>

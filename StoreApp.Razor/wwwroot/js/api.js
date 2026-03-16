@@ -2,7 +2,12 @@
 function authHeaders(extra) {
     const h = Object.assign({ "Content-Type": "application/json" }, extra || {});
     const token = (typeof getAccessToken === "function") ? getAccessToken() : null;
-    if (token) h["Authorization"] = "Bearer " + token;
+    // Authorization: Bearer <accessToken>
+    if (token) h["Authorization"] = "Bearer " + token;  
+    // BE đọc token này để biết:
+    //  người dùng là ai
+    //  có role gì(Admin, Staff, Customer)
+    //  có được phép gọi API đó không
     return h;
 }
 

@@ -83,7 +83,75 @@ async function authRegister(e) {
         return false;
     }
 
-    showMsg("registerMsg", "Đăng ký thành công! Chuyển sang đăng nhập...", "success");
-    setTimeout(() => window.location.href = "/Auth/Login", 500);
+    sessionStorage.setItem("pendingRegisterUserName", userName);
+
+    document.getElementById("otpBox").style.display = "block";
+    document.getElementById("rUserName").disabled = true;
+    document.getElementById("rFullName").disabled = true;
+    document.getElementById("rPassword").disabled = true;
+    document.getElementById("rPhone").disabled = true;
+
+    showMsg("registerMsg", "Đăng ký bước 1 thành công. Vui lòng nhập OTP đã gửi về email.", "success");
     return false;
+}
+
+async function authVerifyOtp() {
+    showMsg("otpMsg", "Đang xác thực OTP...", "warn");
+
+    const email = sessionStorage.getItem("pendingRegisterUserName")
+        || document.getElementById("rUserName")?.value?.trim()
+        || "";
+
+    const otp = document.getElementById("otpCode")?.value?.trim() || "";
+
+    if (!email) {
+        showMsg("otpMsg", "Không tìm thấy email đăng ký.", "error");
+        return;
+    }
+
+    if (!otp) {
+        showMsg("otpMsg", "Vui lòng nhập mã OTP.", "error");
+        return;
+    }
+
+    const { responseObj, data, raw } = await postJson("/api/Auth/verify-otp", {
+        email,
+        otp
+    });
+
+    if (!responseObj.ok) {
+        showMsg("otpMsg", (data?.detail || data?.message || raw || `HTTP ${responseObj.status}`), "error");
+        return;
+    }
+
+    sessionStorage.removeItem("pendingRegisterUserName");
+    showMsg("otpMsg", "Xác thực OTP thành công. Đang chuyển sang đăng nhập...", "success");
+
+    setTimeout(() => {
+        window.location.href = "/Auth/Login";
+    }, 800);
+}
+
+async function authResendOtp() {
+    showMsg("otpMsg", "Đang gửi lại OTP...", "warn");
+
+    const userName = sessionStorage.getItem("pendingRegisterUserName")
+        || document.getElementById("rUserName")?.value?.trim()
+        || "";
+
+    if (!userName) {
+        showMsg("otpMsg", "Không tìm thấy email để gửi lại OTP.", "error");
+        return;
+    }
+
+    const { responseObj, data, raw } = await postJson("/api/Auth/resend-otp", {
+        userName
+    });
+
+    if (!responseObj.ok) {
+        showMsg("otpMsg", (data?.detail || data?.message || raw || `HTTP ${responseObj.status}`), "error");
+        return;
+    }
+
+    showMsg("otpMsg", "Đã gửi lại OTP.", "success");
 }
