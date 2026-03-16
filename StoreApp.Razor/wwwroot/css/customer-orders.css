@@ -185,6 +185,34 @@
     border-top: 1px solid rgba(255,255,255,.10);
     flex-wrap: wrap;
 }
+.btn {
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    cursor: pointer;
+    transition: transform .03s ease;
+}
+
+    .btn:active {
+        transform: translateY(1px);
+    }
+
+    .btn.primary {
+        border-color: rgba(58,123,255,.55);
+        background: rgba(58,123,255,.16);
+    }
+
+    .btn:disabled {
+        opacity: .6;
+        cursor: not-allowed;
+    }
+
+    .btn.danger {
+        border-color: rgba(255,76,92,.45);
+        background: rgba(255,76,92,.14);
+    }
 
 .iconbtn {
     width: 32px;

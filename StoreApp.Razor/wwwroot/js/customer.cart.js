@@ -326,6 +326,6 @@ async function cusCreateOrder() {
 
     showMsg('cartMsg', 'Đặt hàng thành công.', 'success');
     setTimeout(() => {
-        window.location.href = '/customer';
+        window.location.href = '/customer/orders';
     }, 1000);
 }

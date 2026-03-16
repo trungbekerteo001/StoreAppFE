@@ -84,9 +84,13 @@ function _renderOrdRows(items) {
         const id = String(x.id || '');
         const statusKey = _statusKey(x.orderStatus);
 
-        const canConfirm = statusKey === 'pending' || statusKey === 'paid';
+        const paymentKey = String(x.paymentMethod ?? '').trim().toLowerCase();
+        const isCash = paymentKey === '0' || paymentKey === 'cash';
+        const isVnPay = paymentKey === '1' || paymentKey === 'vnpay';
+
+        const canConfirm = (isCash && statusKey === 'pending') || (isVnPay && statusKey === 'paid');
         const canDeliver = statusKey === 'confirmed';
-        const canCancel = statusKey === 'confirmed';
+        const canCancel = (isCash && statusKey === 'pending') || (isVnPay && statusKey === 'paid');
 
         const rowNo = ((_ordPageNumber - 1) * _ordPageSize) + idx + 1;
         const itemCount = Array.isArray(x.items) ? x.items.length : 0;
@@ -180,9 +184,13 @@ function _renderOrdModal(order) {
 function _renderOrdModalActions(order) {
     const statusKey = _statusKey(order?.orderStatus);
 
-    _toggleActionBtn('ordConfirmBtn', statusKey === 'pending' || statusKey === 'paid');
+    const paymentKey = String(order?.paymentMethod ?? '').trim().toLowerCase();
+    const isCash = paymentKey === '0' || paymentKey === 'cash';
+    const isVnPay = paymentKey === '1' || paymentKey === 'vnpay';
+
+    _toggleActionBtn('ordConfirmBtn', (isCash && statusKey === 'pending') || (isVnPay && statusKey === 'paid'));
     _toggleActionBtn('ordDeliverBtn', statusKey === 'confirmed');
-    _toggleActionBtn('ordCancelBtn', statusKey === 'confirmed');
+    _toggleActionBtn('ordCancelBtn', (isCash && statusKey === 'pending') || (isVnPay && statusKey === 'paid'));
 }
 
 function _toggleActionBtn(id, visible) {

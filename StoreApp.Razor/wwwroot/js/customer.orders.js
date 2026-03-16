@@ -84,6 +84,12 @@ function cusOrdRenderRows(items) {
         const rowNo = ((_cusOrdPageNumber - 1) * _cusOrdPageSize) + idx + 1;
         const itemCount = Array.isArray(x.items) ? x.items.length : 0;
 
+        const statusKey = cusOrdStatusKey(x.orderStatus);
+        const paymentKey = String(x.paymentMethod ?? '').trim().toLowerCase();
+        const isCash = paymentKey === '0' || paymentKey === 'cash';
+        const isVnPay = paymentKey === '1' || paymentKey === 'vnpay';
+        const canCancel = (isCash && statusKey === 'pending') || (isVnPay && statusKey === 'pending');
+
         return `
             <tr>
                 <td>${rowNo}</td>
@@ -96,8 +102,11 @@ function cusOrdRenderRows(items) {
                 <td>${itemCount}</td>
                 <td>${cusOrdEsc(cusOrdMoney(x.totalAmount))}</td>
                 <td>${cusOrdEsc(cusOrdDateTime(x.updatedAt))}</td>
+                
+
                 <td>
                     <button class="btn" type="button" onclick="cusOrdOpenView('${cusOrdEscAttr(id)}')">Xem</button>
+                    ${canCancel ? `<button class="btn danger" type="button" onclick="cusOrdCancel('${cusOrdEscAttr(id)}')">Huỷ</button>` : ''}
                 </td>
             </tr>
         `;
@@ -270,4 +279,32 @@ function cusOrdEsc(s) {
 
 function cusOrdEscAttr(s) {
     return cusOrdEsc(s);
+}
+
+async function cusOrdCancel(id) {
+    if (!id) return;
+    if (!confirm('Bạn chắc chắn muốn huỷ đơn hàng này?')) return;
+
+    showMsg('cusOrdMsg', '');
+
+    const result = await apiRequest('PUT', `${CUSTOMER_ORDER_API}/${encodeURIComponent(id)}/cancel`);
+
+    if (!result.res) {
+        showMsg('cusOrdMsg', result.raw || 'Không gọi được API huỷ đơn hàng.', 'error');
+        return;
+    }
+
+    if (!result.res.ok) {
+        showMsg('cusOrdMsg', result.data?.detail || result.data?.message || result.raw || `HTTP ${result.res.status}`, 'error');
+        return;
+    }
+
+    showMsg('cusOrdMsg', 'Huỷ đơn hàng thành công.', 'success');
+    await cusOrdLoad(false);
+
+    if (_cusOrdCurrent && String(_cusOrdCurrent.id).toLowerCase() === String(id).toLowerCase()) {
+        cusOrdCloseModal();
+    }
+
+    setTimeout(() => showMsg('cusOrdMsg', ''), 1800);
 }
