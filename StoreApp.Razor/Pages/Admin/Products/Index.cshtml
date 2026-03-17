@@ -20,15 +20,15 @@
                     <option value="">-- Tất cả Category --</option>
                 </select>
 
-                <input id="minPrice" type="number" inputmode="decimal" step="0.01" placeholder="Giá từ" />
-                <input id="maxPrice" type="number" inputmode="decimal" step="0.01" placeholder="Giá đến" />
+                <input id="minPrice" type="number" inputmode="decimal" step="1000" placeholder="Giá từ" />
+                <input id="maxPrice" type="number" inputmode="decimal" step="1000" placeholder="Giá đến" />
 
                 <input id="kw" type="text" placeholder="Tìm theo keyword..." />
-                <button class="btn" type="button" onclick="prodSearch()">Tìm</button>
-                <button class="btn" type="button" onclick="prodClear()">Reset</button>
+                <button class="btn" type="button" id="btnProdSearch">Tìm</button>
+                <button class="btn" type="button" id="btnProdClear">Reset</button>
             </div>
 
-            <button class="btn primary" type="button" onclick="prodOpenCreate()">+ Thêm</button>
+            <button class="btn primary" type="button" id="btnProdOpenCreate">+ Thêm</button>
         </div>
     </div>
 
@@ -50,7 +50,7 @@
                 </tr>
             </thead>
             <tbody id="prodTbody">
-                <tr><td colspan="7" class="muted">Đang tải...</td></tr>
+                <tr><td colspan="9" class="muted">Đang tải...</td></tr>
             </tbody>
         </table>
     </div>
@@ -58,20 +58,20 @@
     <!-- Phân trang -->
     <div class="prod-pager" id="prodPager">
         <div class="prod-pager-right">
-            <button class="btn" type="button" id="prodPrevBtn" onclick="prodPrevPage()">← Trước</button>
+            <button class="btn" type="button" id="prodPrevBtn">← Trước</button>
             <div class="prod-pager-info" id="prodPagerInfo">Trang 1 / 1</div>
-            <button class="btn" type="button" id="prodNextBtn" onclick="prodNextPage()">Sau →</button>
+            <button class="btn" type="button" id="prodNextBtn">Sau →</button>
         </div>
     </div>
 </div>
 
-<!-- Modal -->
 <div class="modal" id="prodModal" aria-hidden="true">
-    <div class="modal-backdrop" onclick="prodCloseModal()"></div>
+    <div class="modal-backdrop" id="prodModalBackdrop"></div>
+
     <div class="modal-panel" role="dialog" aria-modal="true">
         <div class="modal-head">
             <div class="modal-title" id="prodModalTitle">Thêm Product</div>
-            <button class="iconbtn" type="button" onclick="prodCloseModal()" aria-label="Đóng">✕</button>
+            <button class="iconbtn" type="button" id="btnProdCloseX" aria-label="Đóng">✕</button>
         </div>
 
         <div class="modal-body">
@@ -93,19 +93,18 @@
 
                 <label class="field">
                     <span>Giá</span>
-                    <input id="prodPrice" type="number" inputmode="decimal" step="0.01" placeholder="0" />
+                    <input id="prodPrice" type="number" inputmode="decimal" step="1000" placeholder="0" />
                 </label>
-
 
                 <div class="field field-full">
                     <span>Upload ảnh (tuỳ chọn)</span>
                     <div class="upload-row">
                         <input id="prodImageFile" type="file" accept="image/*" />
-                        <button class="btn" type="button" onclick="prodUploadImage()">Upload</button>
-                        <button class="btn" type="button" onclick="prodClearImage()">Xoá ảnh</button>
+                        <button class="btn" type="button" id="btnProdUploadImage">Upload</button>
+                        <button class="btn" type="button" id="btnProdClearImage">Xoá ảnh</button>
                     </div>
                     <div class="muted" style="margin-top:6px">
-                        Ảnh sẽ được upload lên server và tự sinh URL.
+                        Ảnh sẽ được upload lên server
                     </div>
                 </div>
 
@@ -119,12 +118,12 @@
         </div>
 
         <div class="modal-foot">
-            <button class="btn" type="button" onclick="prodCloseModal()">Hủy</button>
-            <button class="btn primary" type="button" id="prodSaveBtn" onclick="prodSave()">Lưu</button>
+            <button class="btn" type="button" id="btnProdCancel">Hủy</button>
+            <button class="btn primary" type="button" id="prodSaveBtn">Lưu</button>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="~/js/admin.product.js"></script>
+    <script src="~/js/pages/admin/products.js"></script>
 }

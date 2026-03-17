@@ -16,10 +16,10 @@
         <div class="toolbar-right">
             <div class="search">
                 <input id="kw" type="text" placeholder="Tìm theo keyword..." />
-                <button class="btn" type="button" onclick="catSearch()">Tìm</button>
-                <button class="btn" type="button" onclick="catClear()">Reset</button>
+                <button class="btn" type="button" id="btnCatSearch">Tìm</button>
+                <button class="btn" type="button" id="btnCatClear">Reset</button>
             </div>
-            <button class="btn primary" type="button" onclick="catOpenCreate()">+ Thêm</button>
+            <button class="btn primary" type="button" id="btnCatOpenCreate">+ Thêm</button>
         </div>
     </div>
 
@@ -28,26 +28,26 @@
     <div class="table-wrap" style="margin-top:12px">
         <table class="table" id="catTable">
             <thead>
-            <tr>
-                <th style="width:70px">#</th>
-                <th>Tên</th>
-                <th style="width:220px">Hành động</th>
-            </tr>
+                <tr>
+                    <th style="width:70px">#</th>
+                    <th>Tên</th>
+                    <th style="width:220px">Hành động</th>
+                </tr>
             </thead>
             <tbody id="catTbody">
-            <tr><td colspan="3" class="muted">Đang tải...</td></tr>
+                <tr><td colspan="3" class="muted">Đang tải...</td></tr>
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- Modal -->
 <div class="modal" id="catModal" aria-hidden="true">
-    <div class="modal-backdrop" onclick="catCloseModal()"></div>
+    <div class="modal-backdrop" id="catModalBackdrop"></div>
+
     <div class="modal-panel" role="dialog" aria-modal="true">
         <div class="modal-head">
             <div class="modal-title" id="catModalTitle">Thêm Category</div>
-            <button class="iconbtn" type="button" onclick="catCloseModal()" aria-label="Đóng">✕</button>
+            <button class="iconbtn" type="button" id="btnCatCloseX" aria-label="Đóng">✕</button>
         </div>
 
         <div class="modal-body">
@@ -55,16 +55,17 @@
                 <span>Tên Category</span>
                 <input id="catName" type="text" placeholder="Ví dụ: Đồ uống" />
             </label>
+
             <div id="catModalMsg" class="msg" style="margin-top:10px; display:none"></div>
         </div>
 
         <div class="modal-foot">
-            <button class="btn" type="button" onclick="catCloseModal()">Hủy</button>
-            <button class="btn primary" type="button" id="catSaveBtn" onclick="catSave()">Lưu</button>
+            <button class="btn" type="button" id="btnCatCancel">Hủy</button>
+            <button class="btn primary" type="button" id="catSaveBtn">Lưu</button>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="~/js/admin.category.js"></script>
+    <script src="~/js/pages/admin/categories.js"></script>
 }

@@ -4,7 +4,7 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/customer-cart.css" />
+    <link rel="stylesheet" href="~/css/customer-cart.css" asp-append-version="true" />
 }
 
 <div class="customer-cart-page">
@@ -16,7 +16,7 @@
                     <div class="muted">Sản phẩm được lưu ở localStorage</div>
                 </div>
 
-                <a class="btn-secondary small" href="/Customer">← Tiếp tục mua hàng</a>
+                <a class="btn-secondary small" href="/customer">← Tiếp tục mua hàng</a>
             </div>
 
             <div id="cartMsg" class="msg" style="display:none"></div>
@@ -45,7 +45,7 @@
                     <strong id="sumAmount">0 đ</strong>
                 </div>
 
-                <button class="btn-secondary small summary-btn" type="button" onclick="cusCartClear()">
+                <button class="btn-secondary small summary-btn" type="button" id="btnCartClear">
                     Xóa toàn bộ giỏ hàng
                 </button>
 
@@ -61,7 +61,7 @@
                     </select>
                 </div>
 
-                <button class="btn-primary small summary-btn" type="button" onclick="cusCreateOrder()">
+                <button class="btn-primary small summary-btn" type="button" id="btnCreateOrder">
                     Xác nhận đặt hàng
                 </button>
             </div>
@@ -70,8 +70,5 @@
 </div>
 
 @section Scripts {
-    <script src="~/js/customer.cart.js"></script>
-    <script>
-        authGuard(["Customer"]);
-    </script>
+    <script src="~/js/pages/customer/cart.js" asp-append-version="true"></script>
 }

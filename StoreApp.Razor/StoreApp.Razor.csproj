@@ -6,4 +6,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include="wwwroot\js\core\auth.js" />
+    <None Include="wwwroot\js\core\config.js" />
+    <None Include="wwwroot\js\core\dom.js" />
+    <None Include="wwwroot\js\core\http.js" />
+    <None Include="wwwroot\js\core\message.js" />
+    <None Include="wwwroot\js\core\pager.js" />
+    <None Include="wwwroot\js\core\role.js" />
+  </ItemGroup>
+
 </Project>

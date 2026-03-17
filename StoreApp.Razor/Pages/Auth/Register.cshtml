@@ -12,7 +12,7 @@
         <h1>Đăng ký</h1>
         <p>Tạo tài khoản mới theo API hiện có.</p>
 
-        <form class="form" onsubmit="return authRegister(event)">
+        <form class="form" onsubmit="return StoreApp.auth.register(event)">
             <div class="field">
                 <label>Tên đăng nhập</label>
                 <input id="rUserName" autocomplete="username" required />
@@ -45,8 +45,8 @@
                     <input id="otpCode" maxlength="6" inputmode="numeric" placeholder="Nhập mã OTP" />
                 </div>
 
-                <button class="btn" type="button" onclick="authVerifyOtp()">Xác thực OTP</button>
-                <button class="btn secondary" type="button" onclick="authResendOtp()">Gửi lại OTP</button>
+                <button class="btn" type="button" onclick="StoreApp.auth.verifyOtp()">Xác thực OTP</button>
+                <button class="btn secondary" type="button" onclick="StoreApp.auth.resendOtp()">Gửi lại OTP</button>
 
                 <div id="otpMsg" class="msg" style="display:none"></div>
             </div>

@@ -12,7 +12,7 @@
         <h1>Đăng nhập</h1>
         <p>Đăng nhập để lấy accessToken/refreshToken.</p>
 
-        <form class="form" onsubmit="return authLogin(event)">
+        <form class="form" onsubmit="return StoreApp.auth.login(event)">
             <div class="field">
                 <label>Tên đăng nhập</label>
                 <input id="userName" autocomplete="username" required />

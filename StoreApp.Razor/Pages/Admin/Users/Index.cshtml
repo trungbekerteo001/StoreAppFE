@@ -16,10 +16,11 @@
         <div class="toolbar-right">
             <div class="search">
                 <input id="kw" type="text" placeholder="Tìm theo username / họ tên / role..." />
-                <button class="btn" type="button" onclick="usrSearch()">Tìm</button>
-                <button class="btn" type="button" onclick="usrClear()">Reset</button>
+                <button class="btn" type="button" id="btnUsrSearch">Tìm</button>
+                <button class="btn" type="button" id="btnUsrClear">Reset</button>
             </div>
-            <button class="btn primary" type="button" onclick="usrOpenCreate()">+ Thêm</button>
+
+            <button class="btn primary" type="button" id="btnUsrOpenCreate">+ Thêm</button>
         </div>
     </div>
 
@@ -38,22 +39,20 @@
                 </tr>
             </thead>
             <tbody id="usrTbody">
-                <tr><td colspan="6" class="muted">Chưa có dữ liệu.</td></tr>
+                <tr><td colspan="6" class="muted">Đang tải...</td></tr>
             </tbody>
         </table>
     </div>
 
-    <!-- Phân trang -->
     <div class="usr-pager" id="usrPager">
         <div class="usr-pager-right">
-            <button class="btn" type="button" id="usrPrevBtn" onclick="usrPrevPage()">← Trước</button>
+            <button class="btn" type="button" id="usrPrevBtn">← Trước</button>
             <div class="usr-pager-info" id="usrPagerInfo">Trang 1 / 1</div>
-            <button class="btn" type="button" id="usrNextBtn" onclick="usrNextPage()">Sau →</button>
+            <button class="btn" type="button" id="usrNextBtn">Sau →</button>
         </div>
     </div>
 </div>
 
-<!-- MODAL -->
 <div class="modal" id="usrModal" aria-hidden="true">
     <div class="modal-panel">
         <div class="modal-head">
@@ -61,7 +60,7 @@
                 <div class="modal-title" id="usrModalTitle">Thêm User</div>
                 <div class="modal-sub" id="usrModalSub">Tạo mới người dùng</div>
             </div>
-            <button class="icon-btn" type="button" onclick="usrCloseModal()">✕</button>
+            <button class="icon-btn" type="button" id="btnUsrCloseX">✕</button>
         </div>
 
         <div class="modal-body">
@@ -101,12 +100,12 @@
         </div>
 
         <div class="modal-foot">
-            <button class="btn" type="button" onclick="usrCloseModal()">Hủy</button>
-            <button class="btn primary" type="button" id="usrSaveBtn" onclick="usrSave()">Lưu</button>
+            <button class="btn" type="button" id="btnUsrCancel">Hủy</button>
+            <button class="btn primary" type="button" id="usrSaveBtn">Lưu</button>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="~/js/admin.user.js"></script>
+    <script src="~/js/pages/admin/users.js"></script>
 }

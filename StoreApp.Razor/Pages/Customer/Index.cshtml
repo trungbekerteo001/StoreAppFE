@@ -17,7 +17,7 @@
 
             <div class="product-toolbar">
                 <input id="prdKeyword" type="text" placeholder="Tìm theo tên sản phẩm..." />
-                <button class="btn-primary small" type="button" onclick="cusReloadProducts()">Tìm</button>
+                <button class="btn-primary small" type="button" id="btnCusSearch">Tìm</button>
             </div>
         </div>
 
@@ -28,21 +28,20 @@
         </div>
 
         <div class="pager" id="pager" style="display:none">
-            <button class="pager-btn" type="button" id="btnPrev" onclick="cusPrevPage()">← Trước</button>
+            <button class="pager-btn" type="button" id="btnPrev">← Trước</button>
             <div class="pager-info" id="pagerInfo">Trang 1 / 1</div>
-            <button class="pager-btn" type="button" id="btnNext" onclick="cusNextPage()">Sau →</button>
+            <button class="pager-btn" type="button" id="btnNext">Sau →</button>
         </div>
     </div>
 </div>
 
-<!-- Modal chi tiết sản phẩm -->
 <div class="modal" id="productDetailModal" aria-hidden="true">
-    <div class="modal-backdrop" onclick="cusCloseDetailModal()"></div>
+    <div class="modal-backdrop" id="cusDetailBackdrop"></div>
 
     <div class="modal-panel product-detail-modal" role="dialog" aria-modal="true">
         <div class="modal-head">
             <div class="modal-title">Chi tiết sản phẩm</div>
-            <button class="iconbtn" type="button" onclick="cusCloseDetailModal()">✕</button>
+            <button class="iconbtn" type="button" id="btnCusCloseDetailX">✕</button>
         </div>
 
         <div class="modal-body">
@@ -54,16 +53,12 @@
         </div>
 
         <div class="modal-foot">
-            <button class="btn-secondary small" type="button" onclick="cusCloseDetailModal()">Đóng</button>
-            <button class="btn-primary small" type="button" id="btnAddToCart" onclick="cusAddCurrentToCart()">Thêm vào giỏ hàng</button>
+            <button class="btn-secondary small" type="button" id="btnCusCloseDetail">Đóng</button>
+            <button class="btn-primary small" type="button" id="btnAddToCart">Thêm vào giỏ hàng</button>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="~/js/api.js"></script>
-    <script src="~/js/customer.home.js" asp-append-version="true"></script>
-    <script>
-        authGuard(["Customer"]);
-    </script>
+    <script src="~/js/pages/customer/home.js" asp-append-version="true"></script>
 }

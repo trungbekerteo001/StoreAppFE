@@ -4,63 +4,58 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/customer-orders.css" />
+    <link rel="stylesheet" href="~/css/customer-orders.css" asp-append-version="true" />
 }
 
-<div class="order-history-page">
-    <div class="card history-card">
-        <div class="history-head">
-            <div>
-                <h2>Lịch sử đặt hàng</h2>
-                <div class="muted">Xem các đơn hàng bạn đã tạo</div>
-            </div>
-
-            <div class="history-actions">
-                <a class="btn" href="/customer">← Tiếp tục mua hàng</a>
-                <button class="btn" type="button" onclick="cusOrdReload()">Tải lại</button>
-            </div>
+<div class="customer-orders-page">
+    <div class="page-head">
+        <div>
+            <h2>Lịch sử đặt hàng</h2>
+            <div class="muted">Xem đơn hàng đã đặt, trạng thái và chi tiết từng đơn.</div>
         </div>
 
-        <div id="cusOrdMsg" class="msg" style="display:none"></div>
+        <a class="btn-secondary small" href="/customer">← Quay lại mua hàng</a>
+    </div>
 
-        <div class="order-table-wrap">
-            <table class="order-table">
-                <thead>
-                    <tr>
-                        <th style="width:70px">#</th>
-                        <th style="width:220px">Mã đơn</th>
-                        <th style="width:160px">Thanh toán</th>
-                        <th style="width:150px">Trạng thái</th>
-                        <th style="width:100px">Số dòng</th>
-                        <th style="width:160px">Tổng tiền</th>
-                        <th style="width:180px">Cập nhật</th>
-                        <th style="width:120px">Hành động</th>
-                    </tr>
-                </thead>
-                <tbody id="cusOrdTbody">
-                    <tr><td colspan="8" class="muted">Đang tải...</td></tr>
-                </tbody>
-            </table>
-        </div>
+    <div id="cusOrdMsg" class="msg" style="display:none"></div>
 
-        <div class="pager" id="cusOrdPager">
-            <button class="btn" type="button" id="cusOrdPrevBtn" onclick="cusOrdPrevPage()">← Trước</button>
-            <div class="pager-info" id="cusOrdPagerInfo">Trang 1 / 1</div>
-            <button class="btn" type="button" id="cusOrdNextBtn" onclick="cusOrdNextPage()">Sau →</button>
-        </div>
+    <div class="table-wrap" style="margin-top:12px">
+        <table class="table" id="cusOrdTable">
+            <thead>
+                <tr>
+                    <th style="width:72px">#</th>
+                    <th style="width:220px">Mã đơn</th>
+                    <th style="width:130px">Thanh toán</th>
+                    <th style="width:140px">Trạng thái</th>
+                    <th style="width:100px">Số dòng</th>
+                    <th style="width:150px">Tổng tiền</th>
+                    <th style="width:180px">Cập nhật</th>
+                    <th style="width:260px">Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="cusOrdTbody">
+                <tr><td colspan="8" class="muted">Đang tải...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pager" id="cusOrdPager">
+        <button class="pager-btn" type="button" id="cusOrdPrevBtn">← Trước</button>
+        <div class="pager-info" id="cusOrdPagerInfo">Trang 1 / 1</div>
+        <button class="pager-btn" type="button" id="cusOrdNextBtn">Sau →</button>
     </div>
 </div>
 
 <div class="modal" id="cusOrdModal" aria-hidden="true">
-    <div class="modal-backdrop" onclick="cusOrdCloseModal()"></div>
+    <div class="modal-backdrop" id="cusOrdBackdrop"></div>
 
-    <div class="modal-panel" role="dialog" aria-modal="true">
+    <div class="modal-panel order-detail-modal" role="dialog" aria-modal="true">
         <div class="modal-head">
             <div>
                 <div class="modal-title">Chi tiết đơn hàng</div>
-                <div class="modal-sub">Thông tin đơn hàng của bạn</div>
+                <div class="modal-sub">Thông tin giao hàng, trạng thái và sản phẩm đã đặt</div>
             </div>
-            <button class="iconbtn" type="button" onclick="cusOrdCloseModal()">✕</button>
+            <button class="iconbtn" type="button" id="btnCusOrdCloseX">✕</button>
         </div>
 
         <div class="modal-body">
@@ -81,11 +76,6 @@
                 </div>
 
                 <div class="meta-box">
-                    <div class="meta-label">Staff duyệt</div>
-                    <div class="meta-value mono" id="cusOrdViewStaffId">-</div>
-                </div>
-
-                <div class="meta-box">
                     <div class="meta-label">Cập nhật</div>
                     <div class="meta-value" id="cusOrdViewUpdatedAt">-</div>
                 </div>
@@ -97,14 +87,14 @@
 
                 <div class="meta-box meta-box-full">
                     <div class="meta-label">Tổng tiền</div>
-                    <div class="meta-value total-amount" id="cusOrdViewTotal">0 ₫</div>
+                    <div class="meta-value total-amount" id="cusOrdViewTotal">0 đ</div>
                 </div>
             </div>
 
-            <div class="section-title">Sản phẩm trong đơn</div>
+            <div class="section-title">Chi tiết sản phẩm</div>
 
-            <div class="order-table-wrap inner-table-wrap">
-                <table class="order-table inner-table">
+            <div class="table-wrap inner-table-wrap">
+                <table class="table inner-table">
                     <thead>
                         <tr>
                             <th style="width:70px">#</th>
@@ -124,14 +114,12 @@
         </div>
 
         <div class="modal-foot">
-            <button class="btn" type="button" onclick="cusOrdCloseModal()">Đóng</button>
+            <button class="btn-secondary small" type="button" id="btnCusOrdClose">Đóng</button>
+            <button class="btn-danger small" type="button" id="btnCusOrdCancel">Hủy đơn</button>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="~/js/customer.orders.js"></script>
-    <script>
-        authGuard(["Customer"]);
-    </script>
+    <script src="~/js/pages/customer/orders.js" asp-append-version="true"></script>
 }

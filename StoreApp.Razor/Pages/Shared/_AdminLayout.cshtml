@@ -29,7 +29,7 @@
             </nav>
 
             <div class="admin-sidebar-footer">
-                <button class="btn" type="button" onclick="authLogout()">Đăng xuất</button>
+                <button class="btn" type="button" onclick="StoreApp.auth.logout()">Đăng xuất</button>
             </div>
         </aside>
 
@@ -40,15 +40,16 @@
         </div>
     </div>
 
-    <script src="~/js/config.js"></script>
-    <script src="~/js/api.js"></script>
-    <script src="~/js/msg.js"></script>
-    <script src="~/js/auth.js"></script>
-    <script src="~/js/role.js"></script>
+    <script src="~/js/core/config.js"></script>
+    <script src="~/js/core/auth.js"></script>
+    <script src="~/js/core/role.js"></script>
+    <script src="~/js/core/http.js"></script>
+    <script src="~/js/core/message.js"></script>
+    <script src="~/js/core/dom.js"></script>
+    <script src="~/js/core/pager.js"></script>
     
     <script>
-        // Guard toàn bộ khu vực /Admin
-        authGuard(["admin"]);
+        StoreApp.role.guard(["admin"]);
     </script>
 
     @RenderSection("Scripts", required: false)
