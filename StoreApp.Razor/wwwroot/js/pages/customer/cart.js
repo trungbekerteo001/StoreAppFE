@@ -298,7 +298,7 @@ StoreApp.pages.customerCart = (() => {
         const body = {
             customerId: customerId,
             address: address,
-            paymentMethod: Number(paymentValue),
+            paymentMethod: paymentValue,
             items: cart.map(x => ({
                 productId: x.productId,
                 quantity: Number(x.quantity || 0),
