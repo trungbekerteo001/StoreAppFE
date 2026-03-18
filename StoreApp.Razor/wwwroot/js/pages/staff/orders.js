@@ -1,19 +1,20 @@
-﻿window.StoreApp = window.StoreApp || {};
-window.StoreApp.pages = window.StoreApp.pages || {};
+﻿window.StoreApp = window.StoreApp || {};                // object toàn cục
+window.StoreApp.pages = window.StoreApp.pages || {};    // object con để chứa logic riêng của từng page
 
+    // IIFE - toàn bộ hàm và biến của page chỉ dùng trong phạm vi này để tránh xung đột tên
 StoreApp.pages.staffOrders = (() => {
-    const dom = StoreApp.dom;
-    const http = StoreApp.http;
-    const role = StoreApp.role;
-    const msg = StoreApp.message;
-    const pager = StoreApp.pager;
+    const dom = StoreApp.dom;               // chứa các phương thức thao tác DOM
+    const http = StoreApp.http;             // chứa phương thức request để gọi API
+    const role = StoreApp.role;             // chứa phương thức guard và decode role/token
+    const msg = StoreApp.message;           // chứa phương thức show để hiển thị thông báo
+    const pager = StoreApp.pager;           // chứa helper đọc metadata phân trang
 
-    const API = {
+    const API = {                       // chứa endpoint API dùng trong page này
         order: "/api/Order",
         product: "/api/Product"
     };
 
-    const state = {
+    const state = {                     // state để lưu trạng thái hiện tại của page
         items: [],              // danh sách order ở trang hiện tại
         productCache: [],       // cache product để map productId -> productName
         current: null,          // order đang mở trong modal
@@ -24,7 +25,10 @@ StoreApp.pages.staffOrders = (() => {
         totalCount: 0
     };
 
+    // khi DOM đã sẵn sàng thì gọi hàm initPage để khởi tạo page
     document.addEventListener("DOMContentLoaded", initPage);
+
+    // hàm khởi tạo page order của staff: kiểm tra role, gán event, tải dữ liệu phụ rồi load order
 
     async function initPage() {
         if (!role.guard(["Staff"])) return;
@@ -33,6 +37,8 @@ StoreApp.pages.staffOrders = (() => {
         await loadMeta();
         await loadOrders();
     }
+
+    // gom event cho refresh, phân trang, modal và các nút thao tác đơn hàng
 
     function bindEvents() {
         dom.byId("btnOrdRefresh")?.addEventListener("click", refreshOrders);
@@ -53,12 +59,16 @@ StoreApp.pages.staffOrders = (() => {
         });
     }
 
+    // tải trước danh sách product để map productId sang tên sản phẩm
+
     async function loadMeta() {
         // Load trước danh sách product để khi xem chi tiết order
         // có thể hiện tên sản phẩm thay vì chỉ hiện productId
         const result = await http.request("GET", `${API.product}?PageSize=500`);
         state.productCache = (result?.res?.ok && Array.isArray(result.data)) ? result.data : [];
     }
+
+    // load danh sách đơn hàng staff được xem theo phân trang
 
     async function loadOrders(clearMessage = true) {
         if (clearMessage) {
@@ -70,6 +80,7 @@ StoreApp.pages.staffOrders = (() => {
             tb.innerHTML = `<tr><td colspan="9" class="muted">Đang tải...</td></tr>`;
         }
 
+        // tạo queryString để gửi filter / phân trang lên API
         const qs = new URLSearchParams();
         qs.set("PageNumber", String(state.pageNumber));
         qs.set("PageSize", String(state.pageSize));
@@ -99,9 +110,13 @@ StoreApp.pages.staffOrders = (() => {
         renderPagerInfo();
     }
 
+    // tải lại danh sách order hiện tại
+
     function refreshOrders() {
         loadOrders();
     }
+
+    // render các đơn hàng ra table và gán event cho các nút thao tác
 
     function renderRows() {
         const tb = dom.byId("ordTbody");
@@ -152,22 +167,28 @@ StoreApp.pages.staffOrders = (() => {
             `;
         }).join("");
 
+        // gán sự kiện cho từng nút xem chi tiết sau khi render
         tb.querySelectorAll('[data-action="view"]').forEach(btn => {
             btn.addEventListener("click", () => openView(btn.dataset.id));
         });
 
+        // gán sự kiện cho từng nút xác nhận sau khi render
         tb.querySelectorAll('[data-action="confirm"]').forEach(btn => {
             btn.addEventListener("click", () => confirmOrder(btn.dataset.id));
         });
 
+        // gán sự kiện cho từng nút giao hàng sau khi render
         tb.querySelectorAll('[data-action="deliver"]').forEach(btn => {
             btn.addEventListener("click", () => deliverOrder(btn.dataset.id));
         });
 
+        // gán sự kiện cho từng nút hủy sau khi render
         tb.querySelectorAll('[data-action="cancel"]').forEach(btn => {
             btn.addEventListener("click", () => cancelOrder(btn.dataset.id));
         });
     }
+
+    // load chi tiết đơn hàng rồi mở modal xem
 
     async function openView(id) {
         msg.show("ordModalMsg", "");
@@ -188,6 +209,8 @@ StoreApp.pages.staffOrders = (() => {
         renderModal(state.current);
         openModal();
     }
+
+    // đổ dữ liệu đơn hàng đang chọn vào modal
 
     function renderModal(order) {
         if (!order) return;
@@ -230,6 +253,8 @@ StoreApp.pages.staffOrders = (() => {
         renderModalActions(order);
     }
 
+    // ẩn/hiện nút xác nhận, giao hàng, hủy theo trạng thái đơn
+
     function renderModalActions(order) {
         const statusKey = getStatusKey(order?.orderStatus);
 
@@ -242,35 +267,51 @@ StoreApp.pages.staffOrders = (() => {
         toggleActionBtn("ordCancelBtn", (isCash && statusKey === "pending") || (isVnPay && statusKey === "paid"));
     }
 
+    // ẩn hoặc hiện 1 nút thao tác trong modal
+
     function toggleActionBtn(id, visible) {
         const btn = dom.byId(id);
         if (!btn) return;
         btn.style.display = visible ? "inline-flex" : "none";
     }
 
+    // xác nhận đơn hàng theo id
+
     async function confirmOrder(id) {
         await runActionById(id, "confirm", "Xác nhận đơn hàng thành công.", "xác nhận");
     }
+
+    // chuyển đơn hàng sang trạng thái giao hàng
 
     async function deliverOrder(id) {
         await runActionById(id, "deliver", "Chuyển trạng thái giao hàng thành công.", "giao hàng");
     }
 
+    // hủy đơn hàng theo id
+
     async function cancelOrder(id) {
         await runActionById(id, "cancel", "Hủy đơn hàng thành công.", "hủy");
     }
+
+    // xác nhận đơn hàng đang mở trong modal
 
     async function confirmCurrent() {
         if (state.current?.id) await confirmOrder(state.current.id);
     }
 
+    // giao đơn hàng đang mở trong modal
+
     async function deliverCurrent() {
         if (state.current?.id) await deliverOrder(state.current.id);
     }
 
+    // hủy đơn hàng đang mở trong modal
+
     async function cancelCurrent() {
         if (state.current?.id) await cancelOrder(state.current.id);
     }
+
+    // hàm dùng chung để gọi API thao tác đơn hàng theo action
 
     async function runActionById(id, action, successText, actionLabel) {
         if (!id) return;
@@ -316,6 +357,8 @@ StoreApp.pages.staffOrders = (() => {
         setTimeout(() => msg.show("ordMsg", ""), 1800);
     }
 
+    // khóa/mở các nút thao tác để tránh bấm lặp
+
     function setActionBusy(disabled) {
         ["ordConfirmBtn", "ordDeliverBtn", "ordCancelBtn"].forEach(id => {
             const btn = dom.byId(id);
@@ -323,12 +366,16 @@ StoreApp.pages.staffOrders = (() => {
         });
     }
 
+    // map productId sang tên product từ cache
+
     function getProductName(id) {
         const item = state.productCache.find(x =>
             String(x.id).toLowerCase() === String(id).toLowerCase()
         );
         return item?.productName || shortId(id, 12);
     }
+
+    // chuẩn hóa orderStatus về key thống nhất
 
     function getStatusKey(v) {
         const s = String(v ?? "").trim().toLowerCase();
@@ -342,6 +389,8 @@ StoreApp.pages.staffOrders = (() => {
         return "pending";
     }
 
+    // đổi trạng thái sang text để hiển thị
+
     function getStatusText(v) {
         const s = getStatusKey(v);
         if (s === "pending") return "Pending";
@@ -352,9 +401,13 @@ StoreApp.pages.staffOrders = (() => {
         return "Pending";
     }
 
+    // đổi trạng thái sang class CSS
+
     function getStatusClass(v) {
         return getStatusKey(v);
     }
+
+    // đổi paymentMethod sang text hiển thị
 
     function getPaymentText(v) {
         const s = String(v ?? "").trim().toLowerCase();
@@ -362,11 +415,15 @@ StoreApp.pages.staffOrders = (() => {
         return "Cash";
     }
 
+    // format tiền tệ theo kiểu Việt Nam
+
     function formatMoney(v) {
         const n = Number(v || 0);
         if (!isFinite(n)) return String(v ?? "0");
         return `${n.toLocaleString("vi-VN")} ₫`;
     }
+
+    // format ngày giờ để hiển thị
 
     function formatDateTime(v) {
         if (!v) return "—";
@@ -377,25 +434,35 @@ StoreApp.pages.staffOrders = (() => {
         return d.toLocaleString("vi-VN");
     }
 
+    // rút gọn id dài để hiển thị gọn hơn
+
     function shortId(v, len = 8) {
         const s = String(v || "");
         return s.length > len ? `${s.slice(0, len)}...` : s;
     }
+
+    // gán textContent cho element theo id
 
     function setText(id, text) {
         const el = dom.byId(id);
         if (el) el.textContent = text ?? "";
     }
 
+    // mở modal chi tiết order
+
     function openModal() {
         const m = dom.byId("ordModal");
         if (m) m.classList.add("show");
     }
 
+    // đóng modal chi tiết order
+
     function closeModal() {
         const m = dom.byId("ordModal");
         if (m) m.classList.remove("show");
     }
+
+    // hiển thị thông tin phân trang và trạng thái nút Prev Next
 
     function renderPagerInfo() {
         const info = dom.byId("ordPagerInfo");
@@ -412,11 +479,15 @@ StoreApp.pages.staffOrders = (() => {
         if (nextBtn) nextBtn.disabled = state.pageNumber >= state.totalPages;
     }
 
+    // lùi về trang trước
+
     function prevPage() {
         if (state.pageNumber <= 1) return;
         state.pageNumber--;
         loadOrders(false);
     }
+
+    // sang trang tiếp theo
 
     function nextPage() {
         if (state.pageNumber >= state.totalPages) return;

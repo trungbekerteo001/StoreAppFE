@@ -1,25 +1,29 @@
-﻿window.StoreApp = window.StoreApp || {};
-window.StoreApp.pages = window.StoreApp.pages || {};
+﻿window.StoreApp = window.StoreApp || {};                // object toàn cục
+window.StoreApp.pages = window.StoreApp.pages || {};    // object con để chứa logic riêng của từng page
 
+    // IIFE - toàn bộ hàm và biến của page chỉ dùng trong phạm vi này để tránh xung đột tên
 StoreApp.pages.customerCart = (() => {
-    const dom = StoreApp.dom;
-    const http = StoreApp.http;
-    const role = StoreApp.role;
-    const auth = StoreApp.auth;
-    const msg = StoreApp.message;
+    const dom = StoreApp.dom;               // chứa các phương thức thao tác DOM
+    const http = StoreApp.http;             // chứa phương thức request để gọi API
+    const role = StoreApp.role;             // chứa phương thức guard và decode role/token
+    const auth = StoreApp.auth;             // chứa các phương thức lấy access token
+    const msg = StoreApp.message;           // chứa phương thức show để hiển thị thông báo
 
-    const API = {
+    const API = {                       // chứa endpoint API dùng trong page này
         product: "/api/Product",
         order: "/api/Order"
     };
 
     const CART_KEY = "customer_cart";
 
-    const state = {
+    const state = {                     // state để lưu trạng thái hiện tại của page
         items: []
     };
 
+    // khi DOM đã sẵn sàng thì gọi hàm initPage để khởi tạo page
     document.addEventListener("DOMContentLoaded", initPage);
+
+    // hàm khởi tạo page giỏ hàng: kiểm tra role, gán event rồi load cart
 
     async function initPage() {
         if (!role.guard(["Customer"])) return;
@@ -28,11 +32,12 @@ StoreApp.pages.customerCart = (() => {
         await loadCart();
     }
 
+    // gán event cho nút xóa giỏ, đặt hàng và các nút thao tác 
     function bindEvents() {
         dom.byId("btnCartClear")?.addEventListener("click", clearCart);
         dom.byId("btnCreateOrder")?.addEventListener("click", createOrder);
 
-        document.addEventListener("click", (e) => {
+        document.addEventListener("click", (e) => {         // sự kiện click chung cho tất cả nút tăng, giảm, xóa trong giỏ hàng nhờ data attribute
             const btn = e.target.closest("[data-cart-action]");
             if (!btn) return;
 
@@ -45,6 +50,8 @@ StoreApp.pages.customerCart = (() => {
         });
     }
 
+    // đọc giỏ hàng từ localStorage
+
     function readCartLocal() {
         try {
             const raw = localStorage.getItem(CART_KEY);
@@ -55,10 +62,14 @@ StoreApp.pages.customerCart = (() => {
         }
     }
 
+    // lưu giỏ hàng xuống localStorage đồng thời cập nhật state hiện tại
+
     function saveCart(items) {
         localStorage.setItem(CART_KEY, JSON.stringify(items || []));
         state.items = Array.isArray(items) ? items : [];
     }
+
+    // đọc giỏ hàng local rồi gọi API để làm mới tên, giá và tồn kho của từng sản phẩm
 
     async function readFreshCart() {
         const localCart = readCartLocal();
@@ -88,6 +99,8 @@ StoreApp.pages.customerCart = (() => {
         return freshCart;
     }
 
+    // tải giỏ hàng hiện tại rồi render danh sách và phần tóm tắt
+
     async function loadCart(clearMessage = true) {
         if (clearMessage) msg.show("cartMsg", "");
 
@@ -97,6 +110,8 @@ StoreApp.pages.customerCart = (() => {
         renderCart();
         renderSummary();
     }
+
+    // render toàn bộ sản phẩm đang có trong giỏ hàng
 
     function renderCart() {
         const box = dom.byId("cartList");
@@ -153,6 +168,8 @@ StoreApp.pages.customerCart = (() => {
         `;
     }
 
+    // tính và hiển thị tổng số loại hàng, tổng số lượng và tổng tiền
+
     function renderSummary() {
         const itemKinds = dom.byId("sumItemKinds");
         const quantity = dom.byId("sumQuantity");
@@ -176,6 +193,8 @@ StoreApp.pages.customerCart = (() => {
         amount.textContent = money(totalAmount);
     }
 
+    // tăng số lượng 1 sản phẩm nhưng không vượt quá tồn kho hiện tại
+
     function increase(productId) {
         const cart = [...state.items];
         const item = cart.find(x => String(x.productId) === String(productId));
@@ -196,6 +215,8 @@ StoreApp.pages.customerCart = (() => {
         renderSummary();
     }
 
+    // giảm số lượng 1 sản phẩm nhưng không nhỏ hơn 1
+
     function decrease(productId) {
         const cart = [...state.items];
         const item = cart.find(x => String(x.productId) === String(productId));
@@ -215,6 +236,8 @@ StoreApp.pages.customerCart = (() => {
         renderSummary();
     }
 
+    // xóa 1 sản phẩm khỏi giỏ hàng
+
     function removeItem(productId) {
         const newCart = state.items.filter(x => String(x.productId) !== String(productId));
 
@@ -226,6 +249,8 @@ StoreApp.pages.customerCart = (() => {
         setTimeout(() => msg.show("cartMsg", ""), 1800);
     }
 
+    // xóa toàn bộ giỏ hàng
+
     function clearCart() {
         localStorage.removeItem(CART_KEY);
         state.items = [];
@@ -236,6 +261,8 @@ StoreApp.pages.customerCart = (() => {
         msg.show("cartMsg", "Đã xóa toàn bộ giỏ hàng.", "success");
         setTimeout(() => msg.show("cartMsg", ""), 1800);
     }
+
+    // đọc customerId từ access token hiện tại
 
     function getCurrentCustomerId() {
         const token = auth.getAccessToken();
@@ -251,6 +278,8 @@ StoreApp.pages.customerCart = (() => {
             null
         );
     }
+
+    // validate dữ liệu giỏ hàng rồi gọi API tạo đơn hàng
 
     async function createOrder() {
         msg.show("cartMsg", "");
@@ -352,6 +381,8 @@ StoreApp.pages.customerCart = (() => {
             }
         }
     }
+
+    // format tiền tệ theo kiểu Việt Nam
 
     function money(v) {
         const n = Number(v || 0);

@@ -1,21 +1,22 @@
-window.StoreApp = window.StoreApp || {};
-window.StoreApp.pages = window.StoreApp.pages || {};
+﻿window.StoreApp = window.StoreApp || {};                // object toàn cục
+window.StoreApp.pages = window.StoreApp.pages || {};    // object con để chứa logic riêng của từng page
 
+    // IIFE - toàn bộ hàm và biến của page chỉ dùng trong phạm vi này để tránh xung đột tên
 StoreApp.pages.adminProducts = (() => {
-    const dom = StoreApp.dom;
-    const http = StoreApp.http;
-    const role = StoreApp.role;
-    const msg = StoreApp.message;
-    const pager = StoreApp.pager;
+    const dom = StoreApp.dom;               // chứa các phương thức thao tác DOM
+    const http = StoreApp.http;             // chứa phương thức request để gọi API
+    const role = StoreApp.role;             // chứa phương thức guard và decode role/token
+    const msg = StoreApp.message;           // chứa phương thức show để hiển thị thông báo
+    const pager = StoreApp.pager;           // chứa helper đọc metadata phân trang
 
-    const API = {
+    const API = {                       // chứa endpoint API dùng trong page này
         product: "/api/Product",
         category: "/api/Category",
         supplier: "/api/Supplier",
         uploadImage: "/api/Product/upload-image"
     };
 
-    const state = {
+    const state = {                     // state để lưu trạng thái hiện tại của page
         mode: "create",      // create | edit
         editId: null,        // id product đang sửa
         imageUrl: "",        // url ảnh hiện tại trong modal
@@ -30,7 +31,10 @@ StoreApp.pages.adminProducts = (() => {
         totalCount: 0
     };
 
+        // khi DOM đã sẵn sàng thì gọi hàm initPage để khởi tạo page
     document.addEventListener("DOMContentLoaded", initPage);
+
+    // hàm khởi tạo page: kiểm tra role, gán event, tải dữ liệu phụ rồi load danh sách product
 
     async function initPage() {
         if (!role.guard(["Admin"])) return;
@@ -39,6 +43,8 @@ StoreApp.pages.adminProducts = (() => {
         await loadMeta();
         await loadProducts();
     }
+
+    // gom toàn bộ event của page vào một chỗ để dễ quản lý
 
     function bindEvents() {
         dom.byId("btnProdSearch")?.addEventListener("click", searchProducts);
@@ -68,6 +74,8 @@ StoreApp.pages.adminProducts = (() => {
         });
     }
 
+    // tải category và supplier để đổ vào filter và modal
+
     async function loadMeta() {
         const catRes = await http.request("GET", API.category);
         state.categories = (catRes?.res?.ok && Array.isArray(catRes.data)) ? catRes.data : [];
@@ -79,6 +87,8 @@ StoreApp.pages.adminProducts = (() => {
         fillSelect("prodCategoryId", state.categories, "-- Chọn Category --");
         fillSelect("prodSupplierId", state.suppliers, "-- Chọn Supplier --");
     }
+
+    // render option cho thẻ select từ dữ liệu truyền vào
 
     function fillSelect(id, items, firstText) {
         const el = dom.byId(id);
@@ -99,6 +109,8 @@ StoreApp.pages.adminProducts = (() => {
         el.innerHTML = options.join("");
     }
 
+    // map categoryId sang tên category từ cache
+
     function getCategoryName(id) {
         const found = state.categories.find(x =>
             String(x.id).toLowerCase() === String(id).toLowerCase()
@@ -106,12 +118,16 @@ StoreApp.pages.adminProducts = (() => {
         return found?.name || "";
     }
 
+    // map supplierId sang tên supplier từ cache
+
     function getSupplierName(id) {
         const found = state.suppliers.find(x =>
             String(x.id).toLowerCase() === String(id).toLowerCase()
         );
         return found?.name || "";
     }
+
+    // load danh sách product theo keyword, filter giá, category và phân trang
 
     async function loadProducts(clearMessage = true) {
         if (clearMessage) msg.show("prodMsg", "");
@@ -126,6 +142,7 @@ StoreApp.pages.adminProducts = (() => {
         const minPrice = dom.byId("minPrice")?.value?.trim() || "";
         const maxPrice = dom.byId("maxPrice")?.value?.trim() || "";
 
+        // tạo queryString để gửi filter / phân trang lên API
         const qs = new URLSearchParams();
         qs.set("PageNumber", String(state.pageNumber));
         qs.set("PageSize", String(state.pageSize));
@@ -159,6 +176,8 @@ StoreApp.pages.adminProducts = (() => {
         renderRows();
         renderPagerInfo();
     }
+
+    // render từng product ra table và gán sự kiện cho các nút sau khi render
 
     function renderRows() {
         const tb = dom.byId("prodTbody");
@@ -204,14 +223,18 @@ StoreApp.pages.adminProducts = (() => {
             `;
         }).join("");
 
+                // gán sự kiện cho từng nút sửa sau khi render xong table
         tb.querySelectorAll('[data-action="edit"]').forEach(btn => {
             btn.addEventListener("click", () => openEditModal(btn.dataset.id));
         });
 
+                // gán sự kiện cho từng nút xóa sau khi render xong table
         tb.querySelectorAll('[data-action="delete"]').forEach(btn => {
             btn.addEventListener("click", () => askDelete(btn.dataset.id));
         });
     }
+
+    // hiển thị thông tin phân trang và khóa/mở nút Prev Next
 
     function renderPagerInfo() {
         const info = dom.byId("prodPagerInfo");
@@ -219,8 +242,8 @@ StoreApp.pages.adminProducts = (() => {
         const nextBtn = dom.byId("prodNextBtn");
 
         if (info) {
-            const from = state.totalCount === 0 ? 0 : ((state.pageNumber - 1) * state.pageSize) + 1;
-            const to = Math.min(state.pageNumber * state.pageSize, state.totalCount);
+            const from = state.totalCount === 0 ? 0 : ((state.pageNumber - 1) * state.pageSize) + 1;    // bản ghi đầu tiên
+            const to = Math.min(state.pageNumber * state.pageSize, state.totalCount);                   // bản ghi cuối cùng
             info.textContent = `Trang ${state.pageNumber} / ${state.totalPages} • ${from}-${to} / ${state.totalCount}`;
         }
 
@@ -228,10 +251,14 @@ StoreApp.pages.adminProducts = (() => {
         if (nextBtn) nextBtn.disabled = state.pageNumber >= state.totalPages;
     }
 
+    // tìm kiếm lại danh sách từ trang 1
+
     function searchProducts() {
         state.pageNumber = 1;
         loadProducts();
     }
+
+    // xóa toàn bộ ô lọc rồi tải lại dữ liệu
 
     function clearFilters() {
         const kw = dom.byId("kw");
@@ -248,17 +275,23 @@ StoreApp.pages.adminProducts = (() => {
         loadProducts();
     }
 
+    // lùi về trang trước
+
     function prevPage() {
         if (state.pageNumber <= 1) return;
         state.pageNumber--;
         loadProducts(false);
     }
 
+    // sang trang tiếp theo
+
     function nextPage() {
         if (state.pageNumber >= state.totalPages) return;
         state.pageNumber++;
         loadProducts(false);
     }
+
+    // mở modal tạo mới product và reset các input
 
     function openCreateModal() {
         state.mode = "create";
@@ -280,6 +313,8 @@ StoreApp.pages.adminProducts = (() => {
         msg.show("prodModalMsg", "");
         openModal();
     }
+
+    // mở modal sửa và đổ dữ liệu product cần sửa vào form
 
     function openEditModal(id) {
         const item = state.items.find(x =>
@@ -311,26 +346,36 @@ StoreApp.pages.adminProducts = (() => {
         openModal();
     }
 
+    // mở modal product
+
     function openModal() {
         const modal = dom.byId("prodModal");
         if (modal) modal.classList.add("show");
         setTimeout(() => dom.byId("prodName")?.focus(), 0);
     }
 
+    // đóng modal product
+
     function closeModal() {
         const modal = dom.byId("prodModal");
         if (modal) modal.classList.remove("show");
     }
+
+    // gán value cho input/select theo id
 
     function setInputValue(id, value) {
         const el = dom.byId(id);
         if (el) el.value = value ?? "";
     }
 
+    // khóa hoặc mở 1 control theo id
+
     function setDisabled(id, disabled) {
         const el = dom.byId(id);
         if (el) el.disabled = !!disabled;
     }
+
+    // render ảnh preview từ imageUrl hiện tại
 
     function renderPreview(url) {
         const box = dom.byId("prodPreview");
@@ -345,6 +390,8 @@ StoreApp.pages.adminProducts = (() => {
 
         box.innerHTML = `<img src="${dom.escAttr(u)}" alt="preview" onerror="this.replaceWith(document.createTextNode('Không load được ảnh.'))" />`;
     }
+
+    // validate dữ liệu rồi gọi API create/update product
 
     async function saveProduct() {
         const productName = dom.value("prodName");
@@ -441,6 +488,8 @@ StoreApp.pages.adminProducts = (() => {
         setTimeout(() => msg.show("prodMsg", ""), 1800);
     }
 
+    // hỏi lại người dùng trước khi xóa product
+
     function askDelete(id) {
         const item = state.items.find(x =>
             String(x.id).toLowerCase() === String(id).toLowerCase()
@@ -451,6 +500,8 @@ StoreApp.pages.adminProducts = (() => {
         if (!confirm(`Xoá ${label}?`)) return;
         deleteProduct(id);
     }
+
+    // gọi API xóa product rồi tải lại danh sách
 
     async function deleteProduct(id) {
         msg.show("prodMsg", "Đang xoá...", "warn");
@@ -477,32 +528,38 @@ StoreApp.pages.adminProducts = (() => {
         setTimeout(() => msg.show("prodMsg", ""), 1800);
     }
 
+    // upload file ảnh lên server và nhận lại URL để lưu product
+
     async function uploadImage() {
-        const file = dom.byId("prodImageFile")?.files?.[0];
+        const file = dom.byId("prodImageFile")?.files?.[0];     // lấy ảnh từ input type="file"
         if (!file) {
             msg.show("prodModalMsg", "Bạn chưa chọn file ảnh.", "warn");
             return;
         }
 
-        const form = new FormData();
-        form.append("file", file);
+        const form = new FormData();        // tạo form data để gửi file ảnh lên API
+        form.append("file", file);          // gán file vào form data với key "file"
 
+        // disable nút lưu trong lúc đang upload 
         const saveBtn = dom.byId("prodSaveBtn");
         if (saveBtn) saveBtn.disabled = true;
 
         msg.show("prodModalMsg", "Đang upload ảnh...", "warn");
 
         try {
+            // lấy token để gửi cùng header Authorization
             const token = StoreApp.auth.getAccessToken();
             const headers = {};
             if (token) headers["Authorization"] = "Bearer " + token;
 
+            // gửi request upload ảnh lên server
             const res = await fetch(http.buildUrl(API.uploadImage), {
                 method: "POST",
                 headers,
                 body: form
             });
 
+            // lấy mọi kết quả trả về dưới dạng text 
             const raw = await res.text();
             let data = null;
             if (raw) {
@@ -516,6 +573,7 @@ StoreApp.pages.adminProducts = (() => {
 
             const url = (typeof data === "string") ? data : (data?.url ?? raw);
 
+            // nếu có url trả về thì gán vào state và hiển thị preview
             if (url) {
                 state.imageUrl = String(url).trim();
                 renderPreview(state.imageUrl);
@@ -529,6 +587,8 @@ StoreApp.pages.adminProducts = (() => {
             if (saveBtn) saveBtn.disabled = false;
         }
     }
+
+    // xóa ảnh đang chọn trong modal và reset preview
 
     function clearImage() {
         state.imageUrl = "";

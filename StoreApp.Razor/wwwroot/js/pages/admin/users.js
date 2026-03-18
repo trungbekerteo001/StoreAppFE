@@ -1,18 +1,19 @@
-﻿window.StoreApp = window.StoreApp || {};
-window.StoreApp.pages = window.StoreApp.pages || {};
+﻿window.StoreApp = window.StoreApp || {};                // object toàn cục
+window.StoreApp.pages = window.StoreApp.pages || {};    // object con để chứa logic riêng của từng page
 
+    // IIFE - toàn bộ hàm và biến của page chỉ dùng trong phạm vi này để tránh xung đột tên
 StoreApp.pages.adminUsers = (() => {
-    const dom = StoreApp.dom;
-    const http = StoreApp.http;
-    const role = StoreApp.role;
-    const msg = StoreApp.message;
-    const pager = StoreApp.pager;
+    const dom = StoreApp.dom;               // chứa các phương thức thao tác DOM
+    const http = StoreApp.http;             // chứa phương thức request để gọi API
+    const role = StoreApp.role;             // chứa phương thức guard và decode role/token
+    const msg = StoreApp.message;           // chứa phương thức show để hiển thị thông báo
+    const pager = StoreApp.pager;           // chứa helper đọc metadata phân trang
 
-    const API = {
+    const API = {                       // chứa endpoint API dùng trong page này
         user: "/api/user"
     };
 
-    const state = {
+    const state = {                     // state để lưu trạng thái hiện tại của page
         mode: "create",     // create | edit
         editId: null,       // id user đang sửa
 
@@ -24,7 +25,10 @@ StoreApp.pages.adminUsers = (() => {
         totalCount: 0
     };
 
+        // khi DOM đã sẵn sàng thì gọi hàm initPage để khởi tạo page
     document.addEventListener("DOMContentLoaded", initPage);
+
+    // hàm khởi tạo page: kiểm tra role, gán event và tải danh sách user
 
     async function initPage() {
         if (!role.guard(["Admin"])) return;
@@ -32,6 +36,8 @@ StoreApp.pages.adminUsers = (() => {
         bindEvents();
         await loadUsers();
     }
+
+    // gom toàn bộ event của page user vào một chỗ để dễ quản lý
 
     function bindEvents() {
         dom.byId("btnUsrSearch")?.addEventListener("click", searchUsers);
@@ -66,6 +72,8 @@ StoreApp.pages.adminUsers = (() => {
         });
     }
 
+    // load danh sách user theo keyword + phân trang
+
     async function loadUsers(clearMessage = true) {
         if (clearMessage) {
             msg.show("usrMsg", "");
@@ -78,6 +86,7 @@ StoreApp.pages.adminUsers = (() => {
 
         const kw = dom.value("kw");
 
+        // tạo queryString để gửi filter / phân trang lên API
         const qs = new URLSearchParams();
         qs.set("PageNumber", String(state.pageNumber));
         qs.set("PageSize", String(state.pageSize));
@@ -112,6 +121,8 @@ StoreApp.pages.adminUsers = (() => {
         renderPagerInfo();
     }
 
+    // render từng user ra table và gán sự kiện cho nút sửa / xóa sau khi render
+
     function renderRows() {
         const tb = dom.byId("usrTbody");
         if (!tb) return;
@@ -144,14 +155,18 @@ StoreApp.pages.adminUsers = (() => {
             `;
         }).join("");
 
+                // gán sự kiện cho từng nút sửa sau khi render xong table
         tb.querySelectorAll('[data-action="edit"]').forEach(btn => {
             btn.addEventListener("click", () => openEditModal(btn.dataset.id));
         });
 
+                // gán sự kiện cho từng nút xóa sau khi render xong table
         tb.querySelectorAll('[data-action="delete"]').forEach(btn => {
             btn.addEventListener("click", () => askDelete(btn.dataset.id));
         });
     }
+
+    // hiển thị thông tin phân trang và trạng thái nút Prev Next
 
     function renderPagerInfo() {
         const info = dom.byId("usrPagerInfo");
@@ -168,10 +183,14 @@ StoreApp.pages.adminUsers = (() => {
         if (nextBtn) nextBtn.disabled = state.pageNumber >= state.totalPages;
     }
 
+    // tìm kiếm lại danh sách user từ trang 1
+
     function searchUsers() {
         state.pageNumber = 1;
         loadUsers();
     }
+
+    // xóa keyword rồi tải lại dữ liệu từ trang đầu
 
     function clearFilters() {
         const kw = dom.byId("kw");
@@ -181,17 +200,23 @@ StoreApp.pages.adminUsers = (() => {
         loadUsers();
     }
 
+    // lùi về trang trước
+
     function prevPage() {
         if (state.pageNumber <= 1) return;
         state.pageNumber--;
         loadUsers(false);
     }
 
+    // sang trang tiếp theo
+
     function nextPage() {
         if (state.pageNumber >= state.totalPages) return;
         state.pageNumber++;
         loadUsers(false);
     }
+
+    // mở modal tạo mới user và reset form
 
     function openCreateModal() {
         state.mode = "create";
@@ -211,6 +236,8 @@ StoreApp.pages.adminUsers = (() => {
         msg.show("usrModalMsg", "");
         openModal();
     }
+
+    // mở modal sửa user và đổ dữ liệu hiện tại vào form
 
     function openEditModal(id) {
         const item = state.items.find(x =>
@@ -239,6 +266,8 @@ StoreApp.pages.adminUsers = (() => {
         msg.show("usrModalMsg", "");
         openModal();
     }
+
+    // validate dữ liệu rồi gọi API tạo mới hoặc cập nhật user
 
     async function saveUser() {
         const userName = dom.value("usrUserName");
@@ -326,6 +355,8 @@ StoreApp.pages.adminUsers = (() => {
         }
     }
 
+    // hỏi lại người dùng trước khi xóa user
+
     function askDelete(id) {
         const item = state.items.find(x =>
             String(x.id).toLowerCase() === String(id).toLowerCase()
@@ -337,6 +368,8 @@ StoreApp.pages.adminUsers = (() => {
 
         deleteUser(id);
     }
+
+    // gọi API xóa user rồi tải lại danh sách
 
     async function deleteUser(id) {
         const result = await http.request("DELETE", `${API.user}/${encodeURIComponent(id)}`);
@@ -361,6 +394,8 @@ StoreApp.pages.adminUsers = (() => {
         setTimeout(() => msg.show("usrMsg", ""), 1800);
     }
 
+    // mở modal user
+
     function openModal() {
         const modal = dom.byId("usrModal");
         if (modal) modal.classList.add("show");
@@ -370,15 +405,21 @@ StoreApp.pages.adminUsers = (() => {
         }, 0);
     }
 
+    // đóng modal user
+
     function closeModal() {
         const modal = dom.byId("usrModal");
         if (modal) modal.classList.remove("show");
     }
 
+    // gán value cho input/select theo id
+
     function setInputValue(id, value) {
         const el = dom.byId(id);
         if (el) el.value = value ?? "";
     }
+
+    // ẩn/hiện dòng ghi chú về mật khẩu khi sửa user
 
     function setPwdHintVisible(visible) {
         const hint = dom.byId("usrPwdHint");

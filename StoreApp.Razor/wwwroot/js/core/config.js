@@ -4,6 +4,7 @@
 window.StoreApp = window.StoreApp || {};
 
 // Thêm một thuộc tính tên là config vào object StoreApp
+// tất cả API đều ghép từ baseURL này 
 StoreApp.config = {
     apiBaseUrl: "https://localhost:7217"
 };

@@ -1,20 +1,21 @@
-window.StoreApp = window.StoreApp || {};
-window.StoreApp.pages = window.StoreApp.pages || {};
+﻿window.StoreApp = window.StoreApp || {};                // object toàn cục
+window.StoreApp.pages = window.StoreApp.pages || {};    // object con để chứa logic riêng của từng page
 
+    // IIFE - toàn bộ hàm và biến của page chỉ dùng trong phạm vi này để tránh xung đột tên
 StoreApp.pages.adminGrn = (() => {
-    const dom = StoreApp.dom;
-    const http = StoreApp.http;
-    const role = StoreApp.role;
-    const msg = StoreApp.message;
-    const pager = StoreApp.pager;
+    const dom = StoreApp.dom;               // chứa các phương thức thao tác DOM
+    const http = StoreApp.http;             // chứa phương thức request để gọi API
+    const role = StoreApp.role;             // chứa phương thức guard và decode role/token
+    const msg = StoreApp.message;           // chứa phương thức show để hiển thị thông báo
+    const pager = StoreApp.pager;           // chứa helper đọc metadata phân trang
 
-    const API = {
+    const API = {                       // chứa endpoint API dùng trong page này
         grn: "/api/GRN",
         supplier: "/api/Supplier",
         product: "/api/Product"
     };
 
-    const state = {
+    const state = {                     // state để lưu trạng thái hiện tại của page
         mode: "create",          // create | edit | view
         editId: null,
 
@@ -22,22 +23,27 @@ StoreApp.pages.adminGrn = (() => {
         suppliers: [],           // cache supplier
         products: [],            // cache product
 
+        // khai báo phân trang mặc định, sẽ được cập nhật sau khi gọi API
         pageNumber: 1,
         pageSize: 10,
         totalPages: 1,
         totalCount: 0
     };
 
+    // khi DOM đã sẵn sàng thì gọi hàm initPage để khởi tạo page
     document.addEventListener("DOMContentLoaded", initPage);
+
+    // hàm khởi tạo page: kiểm tra role, gán event, tải dữ liệu phụ rồi load danh sách phiếu nhập
 
     async function initPage() {
         if (!role.guard(["Admin"])) return;
 
         bindEvents();
-        await loadMeta();
-        await loadGrns();
+        await loadMeta();   // load supplier và product để dùng cho filter và modal
+        await loadGrns();   // load danh sách phiếu nhập trang 1 và render ra table
     }
 
+    // gom toàn bộ event của page vào một chỗ để dễ nhìn và dễ bảo trì
     function bindEvents() {
         dom.byId("btnGrnSearch")?.addEventListener("click", searchGrns);
         dom.byId("btnGrnClear")?.addEventListener("click", clearFilters);
@@ -58,37 +64,41 @@ StoreApp.pages.adminGrn = (() => {
         });
     }
 
+    // tải supplier và product để phục vụ filter, select trong modal và phần chi tiết dòng hàng
     async function loadMeta() {
+        // không biết getAll như nào, set tạm pageSize lớn để lấy hết  
         const supRes = await http.request("GET", `${API.supplier}?PageSize=100`);
         state.suppliers = (supRes?.res?.ok && Array.isArray(supRes.data)) ? supRes.data : [];
 
-        const prodRes = await http.request("GET", `${API.product}?PageSize=100`);
+        const prodRes = await http.request("GET", `${API.product}?PageSize=1000`);
         state.products = (prodRes?.res?.ok && Array.isArray(prodRes.data)) ? prodRes.data : [];
 
-        fillSelect("grnSupplierFilter", state.suppliers, "-- Tất cả Supplier --", x => x.name || x.id);
-        fillSelect("grnSupplierId", state.suppliers, "-- Chọn Supplier --", x => x.name || x.id);
+        fillSelect("grnSupplierFilter", state.suppliers, "-- Tất cả Supplier --");
+        fillSelect("grnSupplierId", state.suppliers, "-- Chọn Supplier --");
     }
 
-    function fillSelect(id, items, firstText, labelFn) {
+    // đổ dữ liệu vào thẻ select theo danh sách truyền vào
+    function fillSelect(id, items, firstText) {
         const el = dom.byId(id);
         if (!el) return;
 
         const opts = [];
+        // nếu có firstText thì thêm option đầu tiên với value rỗng để làm lựa chọn mặc định hoặc "tất cả"
         if (firstText !== undefined && firstText !== null) {
             opts.push(`<option value="">${dom.esc(firstText)}</option>`);
         }
 
+        // đổ option từ items vào select, nếu items là null hoặc không phải mảng thì dùng [] để tránh lỗi
         for (const x of (items || [])) {
-            const label = typeof labelFn === "function"
-                ? labelFn(x)
-                : (x.name || x.productName || x.id);
-
+            const label = x.name || x.productName || x.id;
             opts.push(`<option value="${dom.escAttr(x.id)}">${dom.esc(label)}</option>`);
         }
 
+        // gán option vào select
         el.innerHTML = opts.join("");
     }
 
+    // map supplierId sang tên supplier từ cache
     function supplierName(id) {
         const item = state.suppliers.find(x =>
             String(x.id).toLowerCase() === String(id).toLowerCase()
@@ -96,6 +106,7 @@ StoreApp.pages.adminGrn = (() => {
         return item?.name || "";
     }
 
+    // map productId sang tên product từ cache
     function productName(id) {
         const item = state.products.find(x =>
             String(x.id).toLowerCase() === String(id).toLowerCase()
@@ -103,6 +114,7 @@ StoreApp.pages.adminGrn = (() => {
         return item?.productName || "";
     }
 
+    // chuẩn hóa mảng item về đúng shape và ép kiểu số để tính toán an toàn hơn
     function safeItems(items) {
         return Array.isArray(items)
             ? items.map(x => ({
@@ -113,15 +125,19 @@ StoreApp.pages.adminGrn = (() => {
             : [];
     }
 
+    // tính tổng số dòng, tổng số lượng và tổng tiền của 1 phiếu nhập
     function calcTotals(items) {
-        return safeItems(items).reduce((acc, x) => {
+        // reduce là cách duyệt qua từng phần tử để cộng dồn kết quả
+        return safeItems(items).reduce((acc, x) => {    // với mỗi dòng hàng, tăng số dòng lên 1, cộng dồn số lượng và thành tiền
+            // acc là biến tích lũy, x là dòng hàng hiện tại
             acc.lines += 1;
             acc.qty += Number(x.quantity || 0);
             acc.amount += Number(x.quantity || 0) * Number(x.price || 0);
             return acc;
-        }, { lines: 0, qty: 0, amount: 0 });
+        }, { lines: 0, qty: 0, amount: 0 });    // giá trị khởi tạo của acc là { lines: 0, qty: 0, amount: 0  
     }
 
+    // đổi mã/trạng thái phiếu nhập sang text để hiển thị
     function statusText(status) {
         const s = String(status || "").toLowerCase();
         if (s === "completed") return "Completed";
@@ -129,6 +145,7 @@ StoreApp.pages.adminGrn = (() => {
         return "Pending";
     }
 
+    // đổi trạng thái phiếu nhập sang class CSS
     function statusClass(status) {
         const s = String(status || "").toLowerCase();
         if (s === "completed") return "completed";
@@ -136,16 +153,19 @@ StoreApp.pages.adminGrn = (() => {
         return "pending";
     }
 
+    // rút gọn id dài để hiển thị gọn hơn trên UI
     function shortId(v, len = 10) {
         const s = String(v || "");
         return s.length > len ? `${s.slice(0, len)}...` : s;
     }
 
+    // format tiền tệ theo kiểu Việt Nam
     function fmtMoney(v) {
         const n = Number(v || 0);
         return `${n.toLocaleString("vi-VN")} ₫`;
     }
 
+    // format ngày giờ để hiển thị lên bảng và modal
     function fmtDate(v) {
         if (!v) return "—";
         const d = new Date(v);
@@ -153,12 +173,14 @@ StoreApp.pages.adminGrn = (() => {
         return d.toLocaleString("vi-VN");
     }
 
+    // load danh sách phiếu nhập theo filter + phân trang rồi render ra table
     async function loadGrns(clearMessage = true) {
         if (clearMessage) msg.show("grnMsg", "");
 
         const supplierId = dom.byId("grnSupplierFilter")?.value?.trim() || "";
         const status = dom.byId("grnStatusFilter")?.value?.trim() || "";
 
+        // tạo queryString để gửi filter / phân trang lên API
         const qs = new URLSearchParams();
         qs.set("PageNumber", String(state.pageNumber));
         qs.set("PageSize", String(state.pageSize));
@@ -194,6 +216,7 @@ StoreApp.pages.adminGrn = (() => {
         renderPagerInfo();
     }
 
+    // đổ từng phiếu nhập ra table và gán sự kiện cho các nút thao tác sau khi render
     function renderRows() {
         const tb = dom.byId("grnTbody");
         if (!tb) return;
@@ -231,23 +254,28 @@ StoreApp.pages.adminGrn = (() => {
             `;
         }).join("");
 
+                // gán sự kiện cho từng nút xem chi tiết sau khi render
         tb.querySelectorAll('[data-action="view"]').forEach(btn => {
             btn.addEventListener("click", () => openView(btn.dataset.id));
         });
 
+                // gán sự kiện cho từng nút sửa sau khi render xong table
         tb.querySelectorAll('[data-action="edit"]').forEach(btn => {
             btn.addEventListener("click", () => openEdit(btn.dataset.id));
         });
 
+                // gán sự kiện cho từng nút duyệt phiếu nhập sau khi render
         tb.querySelectorAll('[data-action="complete"]').forEach(btn => {
             btn.addEventListener("click", () => askComplete(btn.dataset.id));
         });
 
+                // gán sự kiện cho từng nút hủy sau khi render
         tb.querySelectorAll('[data-action="cancel"]').forEach(btn => {
             btn.addEventListener("click", () => askCancel(btn.dataset.id));
         });
     }
 
+    // hiển thị thông tin phân trang và khóa/mở nút Prev Next
     function renderPagerInfo() {
         const info = dom.byId("grnPagerInfo");
         const prevBtn = dom.byId("grnPrevBtn");
@@ -263,23 +291,27 @@ StoreApp.pages.adminGrn = (() => {
         if (nextBtn) nextBtn.disabled = state.pageNumber >= state.totalPages;
     }
 
+    // lùi về trang trước
     function prevPage() {
         if (state.pageNumber <= 1) return;
         state.pageNumber--;
         loadGrns(false);
     }
 
+    // sang trang tiếp theo
     function nextPage() {
         if (state.pageNumber >= state.totalPages) return;
         state.pageNumber++;
         loadGrns(false);
     }
 
+    // tìm kiếm lại dữ liệu từ trang 1 theo bộ lọc hiện tại
     function searchGrns() {
         state.pageNumber = 1;
         loadGrns();
     }
 
+    // xóa bộ lọc rồi tải lại danh sách
     function clearFilters() {
         const sup = dom.byId("grnSupplierFilter");
         const status = dom.byId("grnStatusFilter");
@@ -291,6 +323,7 @@ StoreApp.pages.adminGrn = (() => {
         loadGrns();
     }
 
+    // đổi tiêu đề và dòng mô tả phụ của modal
     function setModalMeta(title, sub) {
         const titleEl = dom.byId("grnModalTitle");
         const subEl = dom.byId("grnModalSub");
@@ -299,22 +332,26 @@ StoreApp.pages.adminGrn = (() => {
         if (subEl) subEl.textContent = sub;
     }
 
+    // gán value cho input/select theo id
     function setValue(id, value) {
         const el = dom.byId(id);
         if (el) el.value = value ?? "";
     }
 
+    // mở modal phiếu nhập
     function openModal() {
         const m = dom.byId("grnModal");
         if (m) m.classList.add("show");
         setTimeout(() => dom.byId("grnSupplierId")?.focus(), 0);
     }
 
+    // đóng modal phiếu nhập
     function closeModal() {
         const m = dom.byId("grnModal");
         if (m) m.classList.remove("show");
     }
 
+    // mở modal ở chế độ tạo mới và reset dữ liệu ban đầu
     function openCreateModal() {
         state.mode = "create";
         state.editId = null;
@@ -328,14 +365,17 @@ StoreApp.pages.adminGrn = (() => {
         openModal();
     }
 
+    // mở modal ở chế độ chỉ xem
     async function openView(id) {
         await openExisting(id, "view");
     }
 
+    // mở modal ở chế độ sửa
     async function openEdit(id) {
         await openExisting(id, "edit");
     }
 
+    // load chi tiết 1 phiếu nhập từ API rồi đổ dữ liệu vào modal theo mode
     async function openExisting(id, mode) {
         msg.show("grnMsg", "");
 
@@ -371,6 +411,7 @@ StoreApp.pages.adminGrn = (() => {
         openModal();
     }
 
+    // khóa/mở các control trong modal tùy theo mode và trạng thái phiếu nhập
     function applyModalState(status) {
         const isReadOnly =
             state.mode === "view" ||
@@ -395,6 +436,7 @@ StoreApp.pages.adminGrn = (() => {
         });
     }
 
+    // tạo danh sách option sản phẩm cho từng dòng chi tiết
     function productOptions(selectedId) {
         const opts = ['<option value="">-- Chọn sản phẩm --</option>'];
 
@@ -409,6 +451,7 @@ StoreApp.pages.adminGrn = (() => {
         return opts.join("");
     }
 
+    // thêm 1 dòng hàng mới vào bảng chi tiết phiếu nhập
     function addItemRow() {
         const current = readItemsFromDom(false);
         current.push({ productId: "", quantity: 1, price: 0 });
@@ -417,6 +460,7 @@ StoreApp.pages.adminGrn = (() => {
         applyModalState();
     }
 
+    // xóa 1 dòng hàng khỏi bảng chi tiết
     function removeItemRow(index) {
         const current = readItemsFromDom(false);
         current.splice(index, 1);
@@ -424,6 +468,8 @@ StoreApp.pages.adminGrn = (() => {
         renderItemRows(current.length ? current : [{ productId: "", quantity: 1, price: 0 }]);
         applyModalState();
     }
+
+    // render toàn bộ dòng chi tiết của phiếu nhập
 
     function renderItemRows(items) {
         const tb = dom.byId("grnItemsTbody");
@@ -474,6 +520,8 @@ StoreApp.pages.adminGrn = (() => {
         updateSummary(safe);
     }
 
+    // đọc dữ liệu chi tiết hiện có trên DOM để chuẩn bị validate hoặc submit
+
     function readItemsFromDom(strict = true) {
         const rows = Array.from(document.querySelectorAll("#grnItemsTbody tr"));
         const items = [];
@@ -489,6 +537,8 @@ StoreApp.pages.adminGrn = (() => {
 
         return items;
     }
+
+    // cập nhật phần tổng hợp số dòng, số lượng và thành tiền trong modal
 
     function updateSummary(items) {
         const current = Array.isArray(items) ? items : readItemsFromDom(false);
@@ -510,9 +560,13 @@ StoreApp.pages.adminGrn = (() => {
         if (amountEl) amountEl.textContent = fmtMoney(totals.amount);
     }
 
+    // hàm bọc để refresh lại phần summary khi người dùng đổi dữ liệu
+
     function refreshSummary() {
         updateSummary();
     }
+
+    // kiểm tra dữ liệu trước khi gọi API tạo/sửa phiếu nhập
 
     function validatePayload(supplierId, items) {
         if (!supplierId) return "Bạn chưa chọn supplier.";
@@ -534,6 +588,8 @@ StoreApp.pages.adminGrn = (() => {
 
         return "";
     }
+
+    // gọi API tạo mới hoặc cập nhật phiếu nhập
 
     async function saveGrn() {
         const supplierId = dom.byId("grnSupplierId")?.value?.trim() || "";
@@ -592,10 +648,14 @@ StoreApp.pages.adminGrn = (() => {
         }
     }
 
+    // hỏi lại người dùng trước khi duyệt phiếu nhập
+
     function askComplete(id) {
         if (!confirm("Duyệt phiếu nhập này? Khi duyệt, tồn kho sản phẩm sẽ được cộng thêm.")) return;
         completeGrn(id);
     }
+
+    // gọi API duyệt phiếu nhập
 
     async function completeGrn(id) {
         msg.show("grnMsg", "Đang duyệt phiếu nhập...", "warn");
@@ -617,10 +677,14 @@ StoreApp.pages.adminGrn = (() => {
         setTimeout(() => msg.show("grnMsg", ""), 1800);
     }
 
+    // hỏi lại người dùng trước khi hủy phiếu nhập
+
     function askCancel(id) {
         if (!confirm("Hủy phiếu nhập này?")) return;
         cancelGrn(id);
     }
+
+    // gọi API hủy phiếu nhập
 
     async function cancelGrn(id) {
         msg.show("grnMsg", "Đang hủy phiếu nhập...", "warn");

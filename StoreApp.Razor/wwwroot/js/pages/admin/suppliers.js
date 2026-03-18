@@ -1,23 +1,27 @@
-window.StoreApp = window.StoreApp || {};
-window.StoreApp.pages = window.StoreApp.pages || {};
+﻿window.StoreApp = window.StoreApp || {};                // object toàn cục
+window.StoreApp.pages = window.StoreApp.pages || {};    // object con để chứa logic riêng của từng page
 
+    // IIFE - toàn bộ hàm và biến của page chỉ dùng trong phạm vi này để tránh xung đột tên
 StoreApp.pages.adminSuppliers = (() => {
-    const dom = StoreApp.dom;
-    const http = StoreApp.http;
-    const role = StoreApp.role;
-    const msg = StoreApp.message;
+    const dom = StoreApp.dom;               // chứa các phương thức thao tác DOM
+    const http = StoreApp.http;             // chứa phương thức request để gọi API
+    const role = StoreApp.role;             // chứa phương thức guard và decode role/token
+    const msg = StoreApp.message;           // chứa phương thức show để hiển thị thông báo
 
-    const API = {
+    const API = {                       // chứa endpoint API dùng trong page này
         supplier: "/api/Supplier"
     };
 
-    const state = {
+    const state = {                     // state để lưu trạng thái hiện tại của page
         mode: "create",   // create | edit
         editId: null,     // id supplier đang sửa
         items: []         // cache danh sách supplier hiện tại
     };
 
+        // khi DOM đã sẵn sàng thì gọi hàm initPage để khởi tạo page
     document.addEventListener("DOMContentLoaded", initPage);
+
+    // hàm khởi tạo page: kiểm tra role, gán event và tải danh sách supplier
 
     async function initPage() {
         if (!role.guard(["Admin"])) return;
@@ -25,6 +29,8 @@ StoreApp.pages.adminSuppliers = (() => {
         bindEvents();
         await loadSuppliers();
     }
+
+    // gom toàn bộ event của page supplier vào một chỗ
 
     function bindEvents() {
         dom.byId("btnSupSearch")?.addEventListener("click", searchSuppliers);
@@ -48,6 +54,8 @@ StoreApp.pages.adminSuppliers = (() => {
             if (e.key === "Escape") closeModal();
         });
     }
+
+    // load danh sách supplier từ API, có hỗ trợ tìm kiếm theo keyword
 
     async function loadSuppliers(clearMessage = true) {
         if (clearMessage) {
@@ -93,6 +101,8 @@ StoreApp.pages.adminSuppliers = (() => {
         renderRows();
     }
 
+    // render supplier ra table và gán event cho nút sửa / xóa sau khi render
+
     function renderRows() {
         const tb = dom.byId("supTbody");
         if (!tb) return;
@@ -118,24 +128,32 @@ StoreApp.pages.adminSuppliers = (() => {
             </tr>
         `).join("");
 
+                // gán sự kiện cho từng nút sửa sau khi render xong table
         tb.querySelectorAll('[data-action="edit"]').forEach(btn => {
             btn.addEventListener("click", () => openEditModal(btn.dataset.id));
         });
 
+                // gán sự kiện cho từng nút xóa sau khi render xong table
         tb.querySelectorAll('[data-action="delete"]').forEach(btn => {
             btn.addEventListener("click", () => askDelete(btn.dataset.id));
         });
     }
 
+    // tìm kiếm supplier theo keyword hiện tại
+
     function searchSuppliers() {
         loadSuppliers();
     }
+
+    // xóa keyword rồi tải lại danh sách supplier
 
     function clearFilters() {
         const kw = dom.byId("kw");
         if (kw) kw.value = "";
         loadSuppliers();
     }
+
+    // mở modal tạo mới supplier và reset toàn bộ input
 
     function openCreateModal() {
         state.mode = "create";
@@ -151,6 +169,8 @@ StoreApp.pages.adminSuppliers = (() => {
         msg.show("supModalMsg", "");
         openModal();
     }
+
+    // mở modal sửa và đổ dữ liệu supplier đang chọn vào form
 
     function openEditModal(id) {
         const item = state.items.find(x =>
@@ -176,6 +196,8 @@ StoreApp.pages.adminSuppliers = (() => {
         openModal();
     }
 
+    // mở modal supplier
+
     function openModal() {
         const modal = dom.byId("supModal");
         if (modal) modal.classList.add("show");
@@ -185,10 +207,14 @@ StoreApp.pages.adminSuppliers = (() => {
         }, 0);
     }
 
+    // đóng modal supplier
+
     function closeModal() {
         const modal = dom.byId("supModal");
         if (modal) modal.classList.remove("show");
     }
+
+    // validate dữ liệu rồi gọi API create/update supplier
 
     async function saveSupplier() {
         const name = dom.value("supName");
@@ -268,6 +294,8 @@ StoreApp.pages.adminSuppliers = (() => {
         }
     }
 
+    // hỏi lại người dùng trước khi xóa supplier
+
     function askDelete(id) {
         const item = state.items.find(x =>
             String(x.id).toLowerCase() === String(id).toLowerCase()
@@ -279,6 +307,8 @@ StoreApp.pages.adminSuppliers = (() => {
 
         deleteSupplier(id);
     }
+
+    // gọi API xóa supplier rồi tải lại danh sách
 
     async function deleteSupplier(id) {
         msg.show("supMsg", "Đang xóa...", "warn");
@@ -300,6 +330,8 @@ StoreApp.pages.adminSuppliers = (() => {
         msg.show("supMsg", "Xóa nhà cung cấp thành công.", "success");
         setTimeout(() => msg.show("supMsg", ""), 1800);
     }
+
+    // gán value cho input theo id
 
     function setInputValue(id, value) {
         const el = dom.byId(id);
