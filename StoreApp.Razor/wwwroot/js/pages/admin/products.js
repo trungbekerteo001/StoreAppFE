@@ -567,7 +567,7 @@ StoreApp.pages.adminProducts = (() => {
             }
 
             if (!res.ok) {
-                msg.show("prodModalMsg", data?.detail || data?.message || raw || "Có lỗi xảy ra.", "error");
+                msg.show("prodModalMsg", http.getErrorText({ data, raw }), "error");
                 return;
             }
 

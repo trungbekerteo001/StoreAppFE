@@ -72,7 +72,7 @@ StoreApp.auth = {
         if (!responseObj.ok) {      // API 400, 500...
             StoreApp.message.show(
                 "loginMsg",
-                data?.detail || data?.message || raw || `HTTP ${responseObj.status}`,
+                StoreApp.http.getErrorText({ data, raw }) || `HTTP ${responseObj.status}`,
                 "error"
             );
             return false;
@@ -100,10 +100,11 @@ StoreApp.auth = {
             userName, fullName, password, phone
         });
 
+        // sai thông báo lỗi 
         if (!responseObj.ok) {      // API 400, 500...
             StoreApp.message.show(
                 "registerMsg",
-                data?.detail || data?.message || raw || `HTTP ${responseObj.status}`,
+                StoreApp.http.getErrorText({ data, raw }) || `HTTP ${responseObj.status}`,
                 "error"
             );
             return false;
@@ -153,7 +154,7 @@ StoreApp.auth = {
         if (!responseObj.ok) {
             StoreApp.message.show(
                 "otpMsg",
-                data?.detail || data?.message || raw || `HTTP ${responseObj.status}`,
+                StoreApp.http.getErrorText({ data, raw }) || `HTTP ${responseObj.status}`,
                 "error"
             );
             return;
@@ -189,7 +190,7 @@ StoreApp.auth = {
         if (!responseObj.ok) {
             StoreApp.message.show(
                 "otpMsg",
-                data?.detail || data?.message || raw || `HTTP ${responseObj.status}`,
+                StoreApp.http.getErrorText({ data, raw }) || `HTTP ${responseObj.status}`,
                 "error"
             );
             return;
