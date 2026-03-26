@@ -230,7 +230,9 @@ StoreApp.pages.adminUsers = (() => {
         setInputValue("usrPhone", "");
         setInputValue("usrRole", "Staff");
         setInputValue("usrPassword", "");
+        setPasswordVisible(true);
 
+        setPwdHintText("Nhập mật khẩu khi tạo mới");
         setPwdHintVisible(false);
 
         msg.show("usrModalMsg", "");
@@ -260,8 +262,10 @@ StoreApp.pages.adminUsers = (() => {
         setInputValue("usrPhone", item.phone || "");
         setInputValue("usrRole", item.role || "Staff");
         setInputValue("usrPassword", "");
+        setPasswordVisible(false);
 
-        setPwdHintVisible(true);
+        setPwdHintText("BE không đổi password");
+        setPwdHintVisible(false);
 
         msg.show("usrModalMsg", "");
         openModal();
@@ -303,8 +307,8 @@ StoreApp.pages.adminUsers = (() => {
             role: roleValue
         };
 
-        // Khi sửa: nếu để trống password thì coi như không đổi mật khẩu
-        if (String(password).trim()) {
+        // chỉ gửi password khi tạo mới
+        if (state.mode === "create") {
             payload.password = String(password);
         }
 
@@ -417,6 +421,20 @@ StoreApp.pages.adminUsers = (() => {
     function setInputValue(id, value) {
         const el = dom.byId(id);
         if (el) el.value = value ?? "";
+    }
+
+    // ẩn/hiện dòng ghi chú về mật khẩu khi sửa user
+    function setPwdHintText(text) {
+        const hint = dom.byId("usrPwdHint");
+        if (!hint) return;
+        hint.textContent = text || "";
+    }
+
+    // ẩn/hiện trường mật khẩu khi sửa user
+    function setPasswordVisible(visible) {
+        const wrap = dom.byId("usrPasswordWrap");
+        if (!wrap) return;
+        wrap.style.display = visible ? "block" : "none";
     }
 
     // ẩn/hiện dòng ghi chú về mật khẩu khi sửa user

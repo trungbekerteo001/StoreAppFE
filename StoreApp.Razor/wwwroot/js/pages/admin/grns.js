@@ -579,7 +579,7 @@ StoreApp.pages.adminGrn = (() => {
 
             if (!x.productId) return `Dòng ${i + 1} chưa chọn sản phẩm.`;
             if (!Number.isFinite(x.quantity) || x.quantity <= 0) return `Dòng ${i + 1} có số lượng không hợp lệ.`;
-            if (!Number.isFinite(x.price) || x.price < 0) return `Dòng ${i + 1} có đơn giá không hợp lệ.`;
+            if (!Number.isFinite(x.price) || x.price <= 0) return `Dòng ${i + 1} có đơn giá không hợp lệ.`;
 
             const key = String(x.productId).toLowerCase();
             if (seen.has(key)) return `Sản phẩm ở dòng ${i + 1} đang bị trùng.`;

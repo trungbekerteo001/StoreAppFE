@@ -12,7 +12,7 @@
 <body>
     <header class="topbar">
         <div class="container topbar-inner">
-            <a id="brand" class="brand" href="/Auth/Login">StoreApp FE</a>
+            <a id="brand" class="brand" href="/customer">StoreApp FE</a>
 
             <nav class="nav" id="topbarAuthNav">
                 <a href="/Auth/Login">Đăng nhập</a>
@@ -43,7 +43,7 @@
             const token = localStorage.getItem("accessToken");
 
             if (token) {
-                // lấy role từ token 
+                // lấy role từ token
                 const role = (StoreApp.role.getRoleFromToken(token) || "").toLowerCase();
 
                 if (role === "customer") {
@@ -72,14 +72,17 @@
                     `;
                 }
                 else {
-                    if (brand) brand.href = "/Auth/Login";
+                    // token có nhưng không đọc được role / token không hợp lệ
+                    if (brand) brand.href = "/customer";
 
                     nav.innerHTML = `
-                        <button class="linklike" type="button" onclick="StoreApp.auth.logout()">Đăng xuất</button>
+                        <a href="/Auth/Login">Đăng nhập</a>
+                        <a href="/Auth/Register">Đăng ký</a>
                     `;
                 }
             } else {
-                if (brand) brand.href = "/Auth/Login";
+                // chưa đăng nhập vẫn cho vào trang customer
+                if (brand) brand.href = "/customer";
 
                 nav.innerHTML = `
                     <a href="/Auth/Login">Đăng nhập</a>
@@ -87,7 +90,7 @@
                 `;
             }
         })();
-        </script>
+    </script>
 
     @RenderSection("Scripts", required: false)
 </body>

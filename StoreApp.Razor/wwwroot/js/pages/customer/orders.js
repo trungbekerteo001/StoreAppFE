@@ -124,7 +124,7 @@ StoreApp.pages.customerOrders = (() => {
             const paymentKey = String(x.paymentMethod ?? "").trim().toLowerCase();
             const isCash = paymentKey === "0" || paymentKey === "cash";
             const isVnPay = paymentKey === "1" || paymentKey === "vnpay";
-            const canCancel = (isCash && statusKey === "pending") || (isVnPay && statusKey === "paid");
+            const canCancel = (isCash && statusKey === "pending") || (isVnPay && statusKey === "pending");
 
             return `
                 <tr>
@@ -257,7 +257,7 @@ StoreApp.pages.customerOrders = (() => {
         const paymentKey = String(order?.paymentMethod ?? "").trim().toLowerCase();
         const isCash = paymentKey === "0" || paymentKey === "cash";
         const isVnPay = paymentKey === "1" || paymentKey === "vnpay";
-        const canCancel = (isCash && statusKey === "pending") || (isVnPay && statusKey === "paid");
+        const canCancel = (isCash && statusKey === "pending") || (isVnPay && statusKey === "pending");
 
         const btn = dom.byId("btnCusOrdCancel");
         if (btn) btn.style.display = canCancel ? "inline-flex" : "none";

@@ -36,8 +36,6 @@ StoreApp.pages.customerHome = (() => {
     // hàm khởi tạo trang chủ customer: kiểm tra role, gán event, tải lookup rồi load sản phẩm
 
     async function initPage() {
-        if (!role.guard(["Customer"])) return;
-
         bindEvents();
         await loadLookups();
         await loadProducts();
@@ -259,7 +257,6 @@ StoreApp.pages.customerHome = (() => {
         modal.classList.add("show");
 
         const result = await http.request("GET", `${API.product}/${id}`);
-
         if (!result.res) {
             body.innerHTML = `<div class="empty-box">Không gọi được API chi tiết sản phẩm.</div>`;
             return;
@@ -331,6 +328,18 @@ StoreApp.pages.customerHome = (() => {
     // thêm 1 sản phẩm vào giỏ hàng nếu còn tồn kho và chưa tồn tại trong giỏ
 
     function addProductToCart(product, messageTargetId) {
+        // kiểm tra đã đăng nhập chưa bằng cách xem token
+        const token = StoreApp.auth.getAccessToken();
+
+        if (!token) {
+            msg.show(messageTargetId, "Bạn phải đăng nhập để mua hàng.", "warn");
+            // cho 1s đọc thông báo rồi đi đăng nhập 
+            setTimeout(() => {
+                window.location.href = "/Auth/Login";
+            }, 1000);
+            return;
+        }
+
         if (!product) {
             msg.show(messageTargetId, "Không có sản phẩm để thêm.", "error");
             return;
