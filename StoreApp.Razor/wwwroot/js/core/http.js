@@ -14,13 +14,13 @@ StoreApp.http = {
     },
 
     // tạo ra header cho request
-    authHeaders(extra) {
+    authHeaders(extra, token) {
         // tạo header mặc định có "Content-Type": "application/json" để gửi dữ liệu dạng JSON
         // nếu có extra truyền vào, ví dụ { "X-Custom-Header": "value" }
         const h = Object.assign({ "Content-Type": "application/json" }, extra || {});
-        // lấy access token từ localStorage và thêm vào header dưới dạng "Authorization
-        const token = StoreApp.auth.getAccessToken();
-        if (token) h["Authorization"] = "Bearer " + token;  // giúp các API cần đăng nhập tự nhận biết user hiện tại
+        // nếu có token truyền vào thì dùng token đó, nếu không thì lấy token từ StoreApp.auth.getAccessToken()
+        const accessToken = token || StoreApp.auth.getAccessToken();
+        if (accessToken) h["Authorization"] = "Bearer " + accessToken;  // giúp các API cần đăng nhập tự nhận biết user hiện tại
         return h;
     },
 
@@ -30,11 +30,11 @@ StoreApp.http = {
         // path: đường dẫn API, ví dụ "/api/Product"
         // body: dữ liệu gửi đi
         try {
-            // gọi API, method, header có token nếu có, body dạng JSON nếu có
-            const res = await fetch(this.buildUrl(path), {
+            // gửi request với tự động refresh token nếu bị 401
+            const res = await this.fetchWithAutoRefresh(path, { // thay vì gọi fetch trực tiếp thì gọi fetchWithAutoRefresh để có thể tự động refresh token nếu bị 401
                 method,
-                headers: this.authHeaders(),    // tự gán Content-Type
-                body: body === undefined ? undefined : JSON.stringify(body) 
+                headers: { "Content-Type": "application/json" },
+                body: body === undefined ? undefined : JSON.stringify(body)
             });
 
             const raw = await res.text();
@@ -51,6 +51,49 @@ StoreApp.http = {
         } catch (err) {     // nếu lỗi fetch 
             return { res: null, data: null, raw: String(err) };
         }
+    },
+
+    // gửi request với tự động refresh token nếu bị 401
+    async fetchWithAutoRefresh(path, init, options = {}) {
+        // options có thể có retryOn401 để quyết định có tự động refresh token khi bị 401 hay không, mặc định là true
+        const { retryOn401 = true } = options;
+
+        let token = await StoreApp.auth.ensureAccessToken();
+        // tạo reqInit từ init truyền vào, nếu init không có headers thì tạo mới headers rỗng
+        let reqInit = Object.assign({}, init || {});
+        // đảm bảo reqInit có headers, nếu init không có headers thì tạo mới headers rỗng
+        reqInit.headers = Object.assign({}, reqInit.headers || {});
+
+        // nếu có token thì gán vào header Authorization
+        if (token) {
+            reqInit.headers["Authorization"] = "Bearer " + token;
+        }
+
+        let res = await fetch(this.buildUrl(path), reqInit);
+
+        // nếu bị 401 và có retryOn401 và có refresh token thì thử refresh token
+        if (res.status === 401 && retryOn401 && StoreApp.auth.getRefreshToken()) {
+            const ok = await StoreApp.auth.refreshAccessToken();
+
+            if (ok) {
+                token = StoreApp.auth.getAccessToken();
+                // tạo reqInit mới từ init truyền vào, nếu init không có headers thì tạo mới headers rỗng
+                reqInit = Object.assign({}, init || {});
+                // đảm bảo reqInit có headers, nếu init không có headers thì tạo mới headers rỗng
+                reqInit.headers = Object.assign({}, reqInit.headers || {});
+                // gán lại token mới vào header Authorization
+                if (token) {
+                    reqInit.headers["Authorization"] = "Bearer " + token;
+                }
+
+                res = await fetch(this.buildUrl(path), reqInit);
+            } else {
+                // nếu refresh token không thành công thì chuyển hướng về trang login để đăng nhập lại
+                window.location.href = "/Auth/Login";
+            }
+        }
+
+        return res;
     },
 
     // chuẩn hóa lỗi từ API để hiển thị

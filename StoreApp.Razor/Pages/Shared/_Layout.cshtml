@@ -35,12 +35,16 @@
     <script src="~/js/core/pager.js"></script>
 
     <script>
-        (function () {
+        (async function () {
             const nav = document.getElementById("topbarAuthNav");
             const brand = document.getElementById("brand");
             if (!nav) return;
 
-            const token = localStorage.getItem("accessToken");
+            //  cố gắng khôi phục session nếu có refresh token hợp lệ
+            await StoreApp.auth.restoreSessionIfNeeded();
+
+            // lấy token từ localStorage
+            const token = StoreApp.auth.getAccessToken();
 
             if (token) {
                 // lấy role từ token

@@ -7,6 +7,9 @@
 @section Scripts {
     <!-- Khi trang load, nó gọi routeByRole() trong role.js -->
     <script>
-        StoreApp.role.redirectByRole();
+        (async function () {
+            await StoreApp.auth.restoreSessionIfNeeded();
+            StoreApp.role.redirectByRole();
+        })();
     </script>
 }

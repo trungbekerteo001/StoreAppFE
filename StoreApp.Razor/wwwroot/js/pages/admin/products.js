@@ -553,9 +553,8 @@ StoreApp.pages.adminProducts = (() => {
             if (token) headers["Authorization"] = "Bearer " + token;
 
             // gửi request upload ảnh lên server
-            const res = await fetch(http.buildUrl(API.uploadImage), {
+            const res = await http.fetchWithAutoRefresh(API.uploadImage, {
                 method: "POST",
-                headers,
                 body: form
             });
 

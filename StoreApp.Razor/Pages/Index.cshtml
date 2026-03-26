@@ -10,12 +10,19 @@
     <title>Redirecting...</title>
 </head>
 <body>
+    <script src="~/js/core/config.js"></script>
+    <script src="~/js/core/auth.js"></script>
     <script src="~/js/core/role.js"></script>
+    <script src="~/js/core/http.js"></script>
     <script>
             // kiểm tra token và role, sau đó chuyển hướng đến trang phù hợp
             // nếu token không tồn tại hoặc role không hợp lệ thì xóa token và chuyển về trang customer
-            (function () {
-                const token = localStorage.getItem("accessToken");
+            (async function () {
+                // cố gắng khôi phục session nếu có refresh token hợp lệ
+                await StoreApp.auth.restoreSessionIfNeeded();
+
+                // lấy token từ localStorage
+                const token = StoreApp.auth.getAccessToken();
 
                 if (!token) {
                     window.location.href = "/customer";

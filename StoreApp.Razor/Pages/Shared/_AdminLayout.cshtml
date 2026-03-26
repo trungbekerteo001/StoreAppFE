@@ -49,7 +49,11 @@
     <script src="~/js/core/pager.js"></script>
     
     <script>
-        StoreApp.role.guard(["admin"]);
+        (async function () {
+            // cố gắng khôi phục session nếu có refresh token hợp lệ
+            await StoreApp.auth.restoreSessionIfNeeded();
+            StoreApp.role.guard(["admin"]);
+        })();
     </script>
 
     @RenderSection("Scripts", required: false)

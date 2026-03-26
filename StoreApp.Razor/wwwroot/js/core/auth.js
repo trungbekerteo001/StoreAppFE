@@ -6,6 +6,9 @@ window.StoreApp = window.StoreApp || {};
 // gán thuộc tính auth vào StoreApp, chứa các phương thức liên quan đến xác thực
 // như login, register, logout, lưu token, xóa token, gửi request có token, v.v.
 StoreApp.auth = {
+    // biến này dùng để lưu promise khi đang thực hiện refresh token, để tránh gọi nhiều request refresh token cùng lúc
+    _refreshPromise: null,
+
     getAccessToken() {
         return localStorage.getItem("accessToken");
     },
@@ -25,6 +28,81 @@ StoreApp.auth = {
     clearTokens() {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
+    },
+
+    // gọi API refresh token để lấy access token mới khi access token cũ đã hết hạn
+    async ensureAccessToken() {
+        const accessToken = this.getAccessToken();
+        if (!accessToken) return null;
+
+        // nếu access token chưa hết hạn (có thể dùng được ít nhất 30s nữa) thì trả về token cũ, không cần refresh
+        if (!StoreApp.role.isTokenExpired(accessToken, 30)) {
+            return accessToken;
+        }
+
+        const ok = await this.refreshAccessToken();
+        if (!ok) return null;
+
+        return this.getAccessToken();
+    },
+
+    // gọi API refresh token để lấy access token mới, nếu thành công thì lưu token mới vào localStorage và trả về true, ngược lại trả về false
+    async restoreSessionIfNeeded() {
+        const accessToken = this.getAccessToken();
+        if (!accessToken) return false;
+
+        const token = await this.ensureAccessToken();
+        if (token) {
+            return true;
+        }
+        return false;
+    },
+
+    // hàm này sẽ được gọi khi access token đã hết hạn, nó sẽ gửi request refresh token để lấy access token mới
+    // nếu có request refresh token nào đang chờ thì sẽ đợi kết quả của request đó thay vì gửi thêm request mới
+    async refreshAccessToken() {
+        // nếu đã có request refresh token đang chờ thì đợi kết quả của request đó
+        if (this._refreshPromise) {
+            return this._refreshPromise;
+        }
+
+        // nếu chưa có request refresh token nào đang chờ thì tạo mới một request refresh token và lưu vào _refreshPromise
+        this._refreshPromise = (async () => {
+            try {
+                const accessToken = this.getAccessToken();
+                const refreshToken = this.getRefreshToken();
+                const userId = StoreApp.role.getUserIdFromToken(accessToken);
+
+                // nếu thiếu accessToken, refreshToken hoặc userId thì coi như không thể refresh token được, xóa token và yêu cầu đăng nhập lại
+                if (!accessToken || !refreshToken || !userId) {
+                    this.clearTokens();
+                    return false;
+                }
+
+                const { responseObj, data } = await this.postJson("/api/Auth/refresh-token", {
+                    userId,
+                    refreshToken
+                });
+
+                // nếu API trả về lỗi hoặc không có accessToken mới thì coi như refresh token cũng không hợp lệ nữa, xóa token và yêu cầu đăng nhập lại
+                if (!responseObj?.ok || !data?.accessToken || !data?.refreshToken) {
+                    this.clearTokens();
+                    return false;
+                }
+
+                this.saveTokens(data);
+                return true;
+            } catch {
+                // nếu có lỗi trong quá trình gọi API thì coi như refresh token không hợp lệ, xóa token và yêu cầu đăng nhập lại
+                this.clearTokens();
+                return false;
+            } finally {
+                // sau khi hoàn thành request refresh token, dù thành công hay thất bại thì đều xóa _refreshPromise để cho phép các request tiếp theo có thể gọi refresh token nếu cần
+                this._refreshPromise = null;
+            }
+        })();
+
+        return this._refreshPromise;
     },
 
     // hàm quan trọng nhất của file
@@ -52,9 +130,21 @@ StoreApp.auth = {
         return { responseObj, data, raw };
     },
 
-    logout() {
+    // đăng xuất: gọi API logout để xóa refresh token ở server, sau đó xóa token ở client và chuyển về trang login
+    async logout() {
+        try {
+            const accessToken = this.getAccessToken();
+            const refreshToken = this.getRefreshToken();
+            const userId = StoreApp.role.getUserIdFromToken(accessToken);
+
+            if (userId && refreshToken) {
+                await this.postJson("/api/Auth/logout", { userId, refreshToken });
+            }
+        } catch {
+        }
+
         this.clearTokens();
-        window.location.href = "/Auth/Login";   // chuyển về page login 
+        window.location.href = "/Auth/Login";
     },
 
     async login(e) {

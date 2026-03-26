@@ -56,6 +56,40 @@ StoreApp.role = {
         return null;
     },
 
+    // lấy user id từ token JWT bằng cách giải mã payload và tìm kiếm các trường có thể chứa user id
+    getUserIdFromToken(token) {
+        const payload = this.decodeJwtPayload(token);
+        if (!payload) return null;
+
+        return (
+            payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ||
+            payload.nameid ||
+            payload.sub ||
+            null
+        );
+    },
+
+    // lấy thời gian hết hạn (exp) từ token JWT bằng cách giải mã payload và tìm kiếm trường exp
+    getExpFromToken(token) {
+        const payload = this.decodeJwtPayload(token);
+        if (!payload) return null;
+
+        const exp = Number(payload.exp);
+        return Number.isFinite(exp) ? exp : null;
+    },
+
+    // kiểm tra xem token đã hết hạn chưa bằng cách so sánh thời gian hiện tại với thời gian exp trong token
+    isTokenExpired(token, sSeconds = 30) {
+        const exp = this.getExpFromToken(token);
+        if (!exp) return true;
+
+        const now = Math.floor(Date.now() / 1000);  // Date.now trả về milisecond nên phải chia 1000 để được giây
+
+        // nếu token sẽ hết hạn trong vòng sSeconds giây nữa
+        // thì coi như đã hết hạn
+        return exp <= now + sSeconds;
+    },
+
     // map role sang page tương ứng 
     routeForRole(role) {
         const r = String(role || "").toLowerCase();
