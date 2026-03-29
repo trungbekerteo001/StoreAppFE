@@ -79,7 +79,7 @@ StoreApp.pages.customerOrders = (() => {
         qs.set("PageNumber", String(state.pageNumber));
         qs.set("PageSize", String(state.pageSize));
 
-        const result = await http.request("GET", `${API.order}/customer?${qs.toString()}`);
+        const result = await http.request("GET", `${API.order}/history?${qs.toString()}`);
 
         if (!result.res) {
             msg.show("cusOrdMsg", result.raw || "Không gọi được API đơn hàng.", "error");
@@ -196,7 +196,7 @@ StoreApp.pages.customerOrders = (() => {
     async function openDetail(id) {
         msg.show("cusOrdModalMsg", "");
 
-        const result = await http.request("GET", `${API.order}/customer/${encodeURIComponent(id)}`);
+        const result = await http.request("GET", `${API.order}/${encodeURIComponent(id)}`);
 
         if (!result.res) {
             msg.show("cusOrdMsg", result.raw || "Không gọi được API chi tiết đơn hàng.", "error");
@@ -271,7 +271,7 @@ StoreApp.pages.customerOrders = (() => {
         setCancelBusy(true);
         msg.show("cusOrdModalMsg", "");
 
-        const result = await http.request("PUT", `${API.order}/customer/${encodeURIComponent(id)}/cancel`);
+        const result = await http.request("PUT", `${API.order}/${encodeURIComponent(id)}/cancel`);
 
         setCancelBusy(false);
 
@@ -292,7 +292,7 @@ StoreApp.pages.customerOrders = (() => {
         await loadOrders(false);
 
         if (state.current && String(state.current.id).toLowerCase() === String(id).toLowerCase()) {
-            const fresh = await http.request("GET", `${API.order}/customer/${encodeURIComponent(id)}`);
+            const fresh = await http.request("GET", `${API.order}/${encodeURIComponent(id)}`);
             if (fresh?.res?.ok) {
                 state.current = fresh.data;
                 renderModal(state.current);

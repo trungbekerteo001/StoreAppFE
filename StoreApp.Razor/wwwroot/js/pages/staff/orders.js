@@ -85,7 +85,7 @@ StoreApp.pages.staffOrders = (() => {
         qs.set("PageNumber", String(state.pageNumber));
         qs.set("PageSize", String(state.pageSize));
 
-        const result = await http.request("GET", `${API.order}/staff?${qs.toString()}`);
+        const result = await http.request("GET", `${API.order}?${qs.toString()}`);
 
         if (!result.res) {
             msg.show("ordMsg", result.raw || "Không gọi được API.", "error");
@@ -193,7 +193,7 @@ StoreApp.pages.staffOrders = (() => {
     async function openView(id) {
         msg.show("ordModalMsg", "");
 
-        const result = await http.request("GET", `${API.order}/staff/${encodeURIComponent(id)}`);
+        const result = await http.request("GET", `${API.order}/${encodeURIComponent(id)}`);
 
         if (!result.res) {
             msg.show("ordMsg", result.raw || "Không gọi được API.", "error");
@@ -323,7 +323,7 @@ StoreApp.pages.staffOrders = (() => {
         let url = "";
 
         if (action === "cancel") {
-            url = `${API.order}/staff/${encodeURIComponent(id)}/cancel`;
+            url = `${API.order}/${encodeURIComponent(id)}/cancel`;
         } else {
             url = `${API.order}/${encodeURIComponent(id)}/${action}`;
         }
@@ -345,7 +345,7 @@ StoreApp.pages.staffOrders = (() => {
         await loadOrders(false);
 
         if (state.current && String(state.current.id).toLowerCase() === String(id).toLowerCase()) {
-            const fresh = await http.request("GET", `${API.order}/staff/${encodeURIComponent(id)}`);
+            const fresh = await http.request("GET", `${API.order}/${encodeURIComponent(id)}`);
             if (fresh?.res?.ok) {
                 state.current = fresh.data;
                 renderModal(state.current);
