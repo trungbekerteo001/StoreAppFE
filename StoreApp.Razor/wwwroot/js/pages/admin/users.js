@@ -41,6 +41,7 @@ StoreApp.pages.adminUsers = (() => {
 
     function bindEvents() {
         dom.byId("btnUsrSearch")?.addEventListener("click", searchUsers);
+
         dom.byId("btnUsrClear")?.addEventListener("click", clearFilters);
         dom.byId("btnUsrOpenCreate")?.addEventListener("click", openCreateModal);
 
@@ -73,24 +74,25 @@ StoreApp.pages.adminUsers = (() => {
     }
 
     // load danh sách user theo keyword + phân trang
-
     async function loadUsers(clearMessage = true) {
         if (clearMessage) {
             msg.show("usrMsg", "");
         }
 
         const tb = dom.byId("usrTbody");
+        
         if (tb) {
             tb.innerHTML = `<tr><td colspan="6" class="muted">Đang tải...</td></tr>`;
         }
 
         const kw = dom.value("kw");
-
+        const role = dom.byId("roleSelect");
         // tạo queryString để gửi filter / phân trang lên API
         const qs = new URLSearchParams();
         qs.set("PageNumber", String(state.pageNumber));
         qs.set("PageSize", String(state.pageSize));
         if (kw) qs.set("Keyword", kw);
+        if (role) qs.set("role", String(role?.value?.trim() || ""));
 
         const result = await http.request("GET", `${API.user}?${qs.toString()}`);
 
@@ -194,7 +196,9 @@ StoreApp.pages.adminUsers = (() => {
 
     function clearFilters() {
         const kw = dom.byId("kw");
+        const role = dom.byId("roleSelect");
         if (kw) kw.value = "";
+        if (role) role.value = "";
 
         state.pageNumber = 1;
         loadUsers();

@@ -10,10 +10,10 @@ StoreApp.pages.adminProducts = (() => {
     const pager = StoreApp.pager;           // chứa helper đọc metadata phân trang
 
     const API = {                       // chứa endpoint API dùng trong page này
-        product: "/api/Product",
-        category: "/api/Category",
-        supplier: "/api/Supplier",
-        uploadImage: "/api/Product/upload-image"
+        product: "/api/product",
+        category: "/api/category",
+        supplier: "/api/supplier",
+        uploadImage: "/api/product/upload-image"
     };
 
     const state = {                     // state để lưu trạng thái hiện tại của page
@@ -83,7 +83,9 @@ StoreApp.pages.adminProducts = (() => {
         const supRes = await http.request("GET", API.supplier);
         state.suppliers = (supRes?.res?.ok && Array.isArray(supRes.data)) ? supRes.data : [];
 
-        fillSelect("catFilter", state.categories, "-- Tất cả Category --");
+        fillSelect("catCategoryFilter", state.categories, "-- Tất cả thể loại --");
+        fillSelect("catSupplierFilter", state.suppliers ,"-- Tất cả nhà cung cấp --");
+
         fillSelect("prodCategoryId", state.categories, "-- Chọn Category --");
         fillSelect("prodSupplierId", state.suppliers, "-- Chọn Supplier --");
     }
@@ -138,9 +140,11 @@ StoreApp.pages.adminProducts = (() => {
         }
 
         const kw = dom.value("kw");
-        const catId = dom.byId("catFilter")?.value?.trim() || "";
+        const catId = dom.byId("catCategoryFilter")?.value?.trim() || "";
+        const supplierId = dom.byId("catSupplierFilter")?.value?.trim() || "";
         const minPrice = dom.byId("minPrice")?.value?.trim() || "";
         const maxPrice = dom.byId("maxPrice")?.value?.trim() || "";
+        const orderDate = dom.byId("orderDate")?.value || "";
 
         // tạo queryString để gửi filter / phân trang lên API
         const qs = new URLSearchParams();
@@ -149,8 +153,10 @@ StoreApp.pages.adminProducts = (() => {
 
         if (kw) qs.set("Keyword", kw);
         if (catId) qs.set("CategoryId", catId);
+        if (supplierId) qs.set("supplierId", supplierId);
         if (minPrice) qs.set("MinPrice", minPrice);
         if (maxPrice) qs.set("MaxPrice", maxPrice);
+        if (orderDate) qs.set("OrderDate", (orderDate === "desc" ? "desc" : "asc"));
 
         const result = await http.request("GET", `${API.product}?${qs.toString()}`);
 
@@ -165,7 +171,7 @@ StoreApp.pages.adminProducts = (() => {
             if (tb) tb.innerHTML = `<tr><td colspan="9" class="muted">Lỗi tải dữ liệu.</td></tr>`;
             return;
         }
-
+        
         state.items = Array.isArray(result.data) ? result.data : [];
 
         const meta = pager.readMeta(result, state.items.length);
@@ -262,14 +268,18 @@ StoreApp.pages.adminProducts = (() => {
 
     function clearFilters() {
         const kw = dom.byId("kw");
-        const cat = dom.byId("catFilter");
+        const cat = dom.byId("catCategoryFilter");
+        const supplier = dom.byId("catSupplierFilter");
         const min = dom.byId("minPrice");
         const max = dom.byId("maxPrice");
+        const orderDate = dom.byId("orderDate");
 
         if (kw) kw.value = "";
         if (cat) cat.value = "";
         if (min) min.value = "";
         if (max) max.value = "";
+        if (supplier) supplier.value = "";
+        if (orderDate) orderDate.value = "";
 
         state.pageNumber = 1;
         loadProducts();

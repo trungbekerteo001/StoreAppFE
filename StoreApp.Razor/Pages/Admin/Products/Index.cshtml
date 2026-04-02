@@ -11,19 +11,31 @@
     <div class="toolbar">
         <div class="toolbar-left">
             <h1 class="h1">Product</h1>
-            <div class="muted">Lọc theo Category / Giá / Keyword</div>
+            <div class="muted">
+                <div class="input-group mb-3">
+                  @* <input type="text" class="form-control" placeholder="Nhập từ khóa tìm kiếm..." aria-label="Recipient’s username" aria-describedby="button-addon2"> *@
+                  @* <button class="btn btn-outline-secondary" type="button" id="button-addon2"></button> *@
+                </div>
+            </div>
         </div>
 
         <div class="toolbar-right">
             <div class="filters">
-                <select id="catFilter" aria-label="Lọc theo category">
-                    <option value="">-- Tất cả Category --</option>
+                <select id="catCategoryFilter" aria-label="Lọc theo category">
+                    <option value="">-- Tất cả thể loại --</option>
+                </select>
+                <select id="catSupplierFilter" aria-label="Lọc theo supplier">
+                    <option value="">-- Tất cả nhà cung cấp --</option>
                 </select>
 
                 <input id="minPrice" type="number" inputmode="decimal" step="1000" placeholder="Giá từ" />
                 <input id="maxPrice" type="number" inputmode="decimal" step="1000" placeholder="Giá đến" />
 
                 <input id="kw" type="text" placeholder="Tìm theo keyword..." />
+                <select id="catOrderDate">
+                    <option value="desc">Mới nhất</option>
+                    <option value="asc">Cũ nhất</option>
+                </select>
                 <button class="btn" type="button" id="btnProdSearch">Tìm</button>
                 <button class="btn" type="button" id="btnProdClear">Reset</button>
             </div>
