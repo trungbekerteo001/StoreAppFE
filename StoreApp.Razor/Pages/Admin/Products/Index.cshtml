@@ -11,13 +11,17 @@
     <div class="toolbar">
         <div class="toolbar-left">
             <h1 class="h1">Product</h1>
-            <div class="muted">Lọc theo Category / Giá / Keyword</div>
+            <div class="muted">Lọc theo Category / Supplier / Giá / Keyword</div>
         </div>
 
         <div class="toolbar-right">
             <div class="filters">
                 <select id="catFilter" aria-label="Lọc theo category">
                     <option value="">-- Tất cả Category --</option>
+                </select>
+
+                <select id="supFilter" aria-label="Lọc theo supplier">
+                    <option value="">-- Tất cả Supplier --</option>
                 </select>
 
                 <input id="minPrice" type="number" inputmode="decimal" step="1000" placeholder="Giá từ" />
@@ -62,6 +66,11 @@
             <div class="prod-pager-info" id="prodPagerInfo">Trang 1 / 1</div>
             <button class="btn" type="button" id="prodNextBtn">Sau →</button>
         </div>
+    </div>
+
+    <div>
+        <input id="pageSize" type="text" placeholder="Nhập số trang" />
+        <button class="btn" type="button" id="changeSizeBtn">Đổi số trang</button>
     </div>
 </div>
 

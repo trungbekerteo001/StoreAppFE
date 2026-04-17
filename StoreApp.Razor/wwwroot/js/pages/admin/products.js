@@ -60,8 +60,8 @@ StoreApp.pages.adminProducts = (() => {
 
         dom.byId("btnProdUploadImage")?.addEventListener("click", uploadImage);
         dom.byId("btnProdClearImage")?.addEventListener("click", clearImage);
-        dom.byId("prodSaveBtn")?.addEventListener("click", saveProduct);
-
+        dom.byId("changeSizeBtn")?.addEventListener("click", reLoadProducts);
+        
         dom.byId("kw")?.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
                 e.preventDefault();
@@ -85,6 +85,7 @@ StoreApp.pages.adminProducts = (() => {
 
         fillSelect("catFilter", state.categories, "-- Tất cả Category --");
         fillSelect("prodCategoryId", state.categories, "-- Chọn Category --");
+        fillSelect("supFilter", state.suppliers, "-- Tất cả Supplier --");
         fillSelect("prodSupplierId", state.suppliers, "-- Chọn Supplier --");
     }
 
@@ -127,6 +128,40 @@ StoreApp.pages.adminProducts = (() => {
         return found?.name || "";
     }
 
+    async function reLoadProducts() {
+
+        // tạo queryString để gửi filter / phân trang lên API
+        const qs = new URLSearchParams();
+        qs.set("PageNumber", 1);
+        state.pageSize = parseInt(dom.byId("pageSize").value);
+        qs.set("PageSize", state.pageSize);
+
+
+        const result = await http.request("GET", `${API.product}?${qs.toString()}`);
+
+        if (!result.res) {
+            msg.show("prodMsg", result.raw || "Không gọi được API.", "error");
+            if (tb) tb.innerHTML = `<tr><td colspan="9" class="muted">Lỗi tải dữ liệu.</td></tr>`;
+            return;
+        }
+
+        if (!result.res.ok) {
+            msg.show("prodMsg", http.getErrorText(result), "error");
+            if (tb) tb.innerHTML = `<tr><td colspan="9" class="muted">Lỗi tải dữ liệu.</td></tr>`;
+            return;
+        }
+
+        state.items = Array.isArray(result.data) ? result.data : [];
+
+        const meta = pager.readMeta(result, state.items.length);
+        state.pageNumber = Math.max(1, Number(meta.currentPage || 1));
+        state.totalPages = Math.max(1, Number(meta.totalPages || 1));
+        state.totalCount = Math.max(0, Number(meta.totalCount || 0));
+
+        renderRows();
+        renderPagerInfo();
+    }
+
     // load danh sách product theo keyword, filter giá, category và phân trang
 
     async function loadProducts(clearMessage = true) {
@@ -139,6 +174,7 @@ StoreApp.pages.adminProducts = (() => {
 
         const kw = dom.value("kw");
         const catId = dom.byId("catFilter")?.value?.trim() || "";
+        const supId = dom.byId("supFilter")?.value?.trim() || "";
         const minPrice = dom.byId("minPrice")?.value?.trim() || "";
         const maxPrice = dom.byId("maxPrice")?.value?.trim() || "";
 
@@ -149,6 +185,7 @@ StoreApp.pages.adminProducts = (() => {
 
         if (kw) qs.set("Keyword", kw);
         if (catId) qs.set("CategoryId", catId);
+        if (supId) qs.set("SupplierId", supId);
         if (minPrice) qs.set("MinPrice", minPrice);
         if (maxPrice) qs.set("MaxPrice", maxPrice);
 
@@ -263,11 +300,13 @@ StoreApp.pages.adminProducts = (() => {
     function clearFilters() {
         const kw = dom.byId("kw");
         const cat = dom.byId("catFilter");
+        const sup = dom.byId("supFilter");
         const min = dom.byId("minPrice");
         const max = dom.byId("maxPrice");
 
         if (kw) kw.value = "";
         if (cat) cat.value = "";
+        if (sup) sup.value = "";
         if (min) min.value = "";
         if (max) max.value = "";
 
@@ -598,6 +637,8 @@ StoreApp.pages.adminProducts = (() => {
         renderPreview("");
         msg.show("prodModalMsg", "Đã xoá ảnh.", "success");
     }
+
+
 
     return {
         reload: loadProducts
