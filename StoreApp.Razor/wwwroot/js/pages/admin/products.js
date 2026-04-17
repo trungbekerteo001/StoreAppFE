@@ -60,6 +60,7 @@ StoreApp.pages.adminProducts = (() => {
 
         dom.byId("btnProdUploadImage")?.addEventListener("click", uploadImage);
         dom.byId("btnProdClearImage")?.addEventListener("click", clearImage);
+        dom.byId("prodSaveBtn")?.addEventListener("click", saveProduct);
         dom.byId("changeSizeBtn")?.addEventListener("click", reLoadProducts);
         
         dom.byId("kw")?.addEventListener("keydown", (e) => {
@@ -77,16 +78,48 @@ StoreApp.pages.adminProducts = (() => {
     // tải category và supplier để đổ vào filter và modal
 
     async function loadMeta() {
-        const catRes = await http.request("GET", API.category);
-        state.categories = (catRes?.res?.ok && Array.isArray(catRes.data)) ? catRes.data : [];
-
-        const supRes = await http.request("GET", API.supplier);
-        state.suppliers = (supRes?.res?.ok && Array.isArray(supRes.data)) ? supRes.data : [];
+        state.categories = await loadAllPaged(API.category);
+        state.suppliers = await loadAllPaged(API.supplier);
 
         fillSelect("catFilter", state.categories, "-- Tất cả Category --");
         fillSelect("prodCategoryId", state.categories, "-- Chọn Category --");
         fillSelect("supFilter", state.suppliers, "-- Tất cả Supplier --");
         fillSelect("prodSupplierId", state.suppliers, "-- Chọn Supplier --");
+    }
+
+    // hàm helper để load tất cả dữ liệu từ một endpoint có phân trang, trả về mảng gộp tất cả items
+    async function loadAllPaged(endpoint) {
+        const allItems = [];
+        const pageSize = 200;   // số bản ghi mỗi trang khi load tất cả, 200 chắc dư xăng 
+        let pageNumber = 1;
+        let totalPages = 1;
+
+        while (pageNumber <= totalPages) {
+            const qs = new URLSearchParams();
+            qs.set("PageNumber", String(pageNumber));
+            qs.set("PageSize", String(pageSize));
+
+            const result = await http.request("GET", `${endpoint}?${qs.toString()}`);
+
+            if (!result?.res?.ok || !Array.isArray(result.data)) {
+                break;
+            }
+
+            allItems.push(...result.data);
+
+            const meta = pager.readMeta(result, result.data.length);
+            totalPages = Math.max(1, Number(meta.totalPages || 1));
+            pageNumber++;
+        }
+
+        // loại trùng theo id để an toàn
+        const seen = new Set();
+        return allItems.filter(x => {
+            const key = String(x?.id || "").toLowerCase();
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
     }
 
     // render option cho thẻ select từ dữ liệu truyền vào
@@ -129,6 +162,7 @@ StoreApp.pages.adminProducts = (() => {
     }
 
     async function reLoadProducts() {
+        const tb = dom.byId("prodTbody");
 
         // tạo queryString để gửi filter / phân trang lên API
         const qs = new URLSearchParams();
