@@ -453,7 +453,15 @@ StoreApp.pages.adminGrn = (() => {
 
     // thêm 1 dòng hàng mới vào bảng chi tiết phiếu nhập
     function addItemRow() {
-        const current = readItemsFromDom(false);
+        const rows = Array.from(document.querySelectorAll("#grnItemsTbody tr"));
+
+        // đọc dữ liệu hiện tại trên DOM để giữ nguyên khi thêm dòng mới, nếu không đọc thì sẽ mất hết dữ liệu đã nhập ở các dòng trước đó
+        const current = rows.map(row => ({
+            productId: row.querySelector(".grn-item-product")?.value?.trim() || "",
+            quantity: Number(row.querySelector(".grn-item-qty")?.value || 1),
+            price: Number(row.querySelector(".grn-item-price")?.value || 0)
+        }));
+
         current.push({ productId: "", quantity: 1, price: 0 });
 
         renderItemRows(current);

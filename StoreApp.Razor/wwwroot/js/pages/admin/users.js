@@ -13,6 +13,33 @@ StoreApp.pages.adminUsers = (() => {
         user: "/api/user"
     };
 
+    // hàm lấy userId hiện tại từ token để tránh tự xóa hoặc sửa user đang đăng nhập
+    function getCurrentUserIdFromToken() {
+        const token = StoreApp.auth?.getAccessToken?.();
+        if (!token) return "";
+
+        try {
+            // decode payload của token để lấy userId
+            const payloadBase64 = token.split(".")[1]
+                .replace(/-/g, "+")
+                .replace(/_/g, "/");
+
+            // atob để decode base64, JSON.parse để parse chuỗi JSON thành object
+            const payload = JSON.parse(atob(payloadBase64));
+
+            // các hệ thống có thể dùng claim nameidentifier khác nhau, ưu tiên theo thứ tự: WS 2005 > WS 2008 > nameid > sub
+            return String(
+                payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ||
+                payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/nameidentifier"] ||
+                payload["nameid"] ||
+                payload["sub"] ||
+                ""
+            );
+        } catch {
+            return "";
+        }
+    }
+
     const state = {                     // state để lưu trạng thái hiện tại của page
         mode: "create",     // create | edit
         editId: null,       // id user đang sửa
@@ -132,8 +159,12 @@ StoreApp.pages.adminUsers = (() => {
             return;
         }
 
+        // lấy userId hiện tại để disable nút sửa/xóa nếu đang hiển thị user đó
+        const currentUserId = String(getCurrentUserIdFromToken()).toLowerCase();
+
         tb.innerHTML = state.items.map((x, idx) => {
             const rowNo = ((state.pageNumber - 1) * state.pageSize) + idx + 1;
+            const isMe = String(x.id || "").toLowerCase() === currentUserId;
 
             return `
                 <tr>
@@ -148,7 +179,10 @@ StoreApp.pages.adminUsers = (() => {
                     <td>
                         <div class="actions">
                             <button class="btn" type="button" data-action="edit" data-id="${dom.escAttr(x.id)}">Sửa</button>
-                            <button class="btn danger" type="button" data-action="delete" data-id="${dom.escAttr(x.id)}">Xóa</button>
+                            ${isMe
+                                ? `<button class="btn" type="button" disabled title="Không thể tự xóa">Chính bạn</button>`
+                                : `<button class="btn danger" type="button" data-action="delete" data-id="${dom.escAttr(x.id)}">Xóa</button>`
+                            }
                         </div>
                     </td>
                 </tr>
@@ -362,6 +396,13 @@ StoreApp.pages.adminUsers = (() => {
     // hỏi lại người dùng trước khi xóa user
 
     function askDelete(id) {
+        const currentUserId = String(getCurrentUserIdFromToken()).toLowerCase();
+
+        if (String(id).toLowerCase() === currentUserId) {
+            msg.show("usrMsg", "Bạn không thể tự xóa chính mình khi đang đăng nhập.", "error");
+            return;
+        }
+
         const item = state.items.find(x =>
             String(x.id).toLowerCase() === String(id).toLowerCase()
         );
