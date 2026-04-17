@@ -221,3 +221,21 @@
         background: rgba(255,255,255,.06);
         color: var(--text);
     }
+.cat-pager {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+}
+
+.cat-pager-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.cat-pager-info {
+    min-width: 170px;
+    text-align: center;
+    opacity: .85;
+}

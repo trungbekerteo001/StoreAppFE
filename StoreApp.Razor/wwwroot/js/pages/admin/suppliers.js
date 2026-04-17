@@ -7,6 +7,7 @@ StoreApp.pages.adminSuppliers = (() => {
     const http = StoreApp.http;             // chứa phương thức request để gọi API
     const role = StoreApp.role;             // chứa phương thức guard và decode role/token
     const msg = StoreApp.message;           // chứa phương thức show để hiển thị thông báo
+    const pager = StoreApp.pager;
 
     const API = {                       // chứa endpoint API dùng trong page này
         supplier: "/api/Supplier"
@@ -15,7 +16,11 @@ StoreApp.pages.adminSuppliers = (() => {
     const state = {                     // state để lưu trạng thái hiện tại của page
         mode: "create",   // create | edit
         editId: null,     // id supplier đang sửa
-        items: []         // cache danh sách supplier hiện tại
+        items: []    ,     // cache danh sách supplier hiện tại
+        pageNumber: 1,
+        pageSize: 10,
+        totalPages: 1,
+        totalCount: 0
     };
 
         // khi DOM đã sẵn sàng thì gọi hàm initPage để khởi tạo page
@@ -36,6 +41,9 @@ StoreApp.pages.adminSuppliers = (() => {
         dom.byId("btnSupSearch")?.addEventListener("click", searchSuppliers);
         dom.byId("btnSupClear")?.addEventListener("click", clearFilters);
         dom.byId("btnSupOpenCreate")?.addEventListener("click", openCreateModal);
+
+        dom.byId("supPrevBtn")?.addEventListener("click", prevPage);
+        dom.byId("supNextBtn")?.addEventListener("click", nextPage);
 
         dom.byId("btnSupCloseX")?.addEventListener("click", closeModal);
         dom.byId("btnSupCancel")?.addEventListener("click", closeModal);
@@ -68,9 +76,13 @@ StoreApp.pages.adminSuppliers = (() => {
         }
 
         const kw = dom.value("kw");
-        const qs = kw ? `?Keyword=${encodeURIComponent(kw)}` : "";
+        const qs = new URLSearchParams();
+        qs.set("PageNumber", String(state.pageNumber));
+        qs.set("PageSize", String(state.pageSize));
+        if (kw) qs.set("Keyword", kw);
 
-        const result = await http.request("GET", `${API.supplier}${qs}`);
+        // gọi API lấy danh sách supplier với query string tương ứng, sau đó xử lý kết quả trả về
+        const result = await http.request("GET", `${API.supplier}?${qs.toString()}`);
 
         if (!result.res) {
             msg.show("supMsg", result.raw || "Không gọi được API.", "error");
@@ -98,7 +110,15 @@ StoreApp.pages.adminSuppliers = (() => {
             }))
             : [];
 
+        // đọc thông tin phân trang từ header response và cập nhật state
+        const meta = pager.readMeta(result, state.items.length);
+        state.pageNumber = Math.max(1, Number(meta.currentPage || 1));
+        state.totalPages = Math.max(1, Number(meta.totalPages || 1));
+        state.totalCount = Math.max(0, Number(meta.totalCount || 0));
+
+        // sau khi có dữ liệu supplier mới thì gọi hàm render để hiển thị lên UI
         renderRows();
+        renderPagerInfo();
     }
 
     // render supplier ra table và gán event cho nút sửa / xóa sau khi render
@@ -112,9 +132,12 @@ StoreApp.pages.adminSuppliers = (() => {
             return;
         }
 
-        tb.innerHTML = state.items.map((x, idx) => `
+        tb.innerHTML = state.items.map((x, idx) => {
+            const rowNo = ((state.pageNumber - 1) * state.pageSize) + idx + 1;
+
+            return `
             <tr>
-                <td>${idx + 1}</td>
+                <td>${rowNo}</td>
                 <td>${dom.esc(x.name || "")}</td>
                 <td>${dom.esc(x.phone || "")}</td>
                 <td>${dom.esc(x.email || "")}</td>
@@ -126,7 +149,8 @@ StoreApp.pages.adminSuppliers = (() => {
                     </div>
                 </td>
             </tr>
-        `).join("");
+            `;
+        }).join("");
 
                 // gán sự kiện cho từng nút sửa sau khi render xong table
         tb.querySelectorAll('[data-action="edit"]').forEach(btn => {
@@ -139,9 +163,37 @@ StoreApp.pages.adminSuppliers = (() => {
         });
     }
 
+    function renderPagerInfo() {
+        const info = dom.byId("supPagerInfo");
+        const prevBtn = dom.byId("supPrevBtn");
+        const nextBtn = dom.byId("supNextBtn");
+
+        if (info) {
+            const from = state.totalCount === 0 ? 0 : ((state.pageNumber - 1) * state.pageSize) + 1;
+            const to = Math.min(state.pageNumber * state.pageSize, state.totalCount);
+            info.textContent = `Trang ${state.pageNumber} / ${state.totalPages} • ${from}-${to} / ${state.totalCount}`;
+        }
+
+        if (prevBtn) prevBtn.disabled = state.pageNumber <= 1;
+        if (nextBtn) nextBtn.disabled = state.pageNumber >= state.totalPages;
+    }
+
+    function prevPage() {
+        if (state.pageNumber <= 1) return;
+        state.pageNumber--;
+        loadSuppliers(false);
+    }
+
+    function nextPage() {
+        if (state.pageNumber >= state.totalPages) return;
+        state.pageNumber++;
+        loadSuppliers(false);
+    }
+
     // tìm kiếm supplier theo keyword hiện tại
 
     function searchSuppliers() {
+        state.pageNumber = 1;
         loadSuppliers();
     }
 
@@ -150,6 +202,7 @@ StoreApp.pages.adminSuppliers = (() => {
     function clearFilters() {
         const kw = dom.byId("kw");
         if (kw) kw.value = "";
+        state.pageNumber = 1;
         loadSuppliers();
     }
 

@@ -6,6 +6,7 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
     const http = StoreApp.http;         // chứa phương thức request để gọi API
     const role = StoreApp.role;         // chứa phương thức guard để kiểm tra role truy cập page
     const msg = StoreApp.message;       // chứa phương thức show để hiển thị thông báo
+    const pager = StoreApp.pager;
 
     const API = {                       // chứa endpoint API cho category
         category: "/api/category"
@@ -15,7 +16,11 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
     const state = {             
         mode: "create",   // create | edit
         editId: null,     // id category đang sửa
-        items: []         // cache danh sách category hiện tại
+        items: []     ,    // cache danh sách category hiện tại
+        pageNumber: 1,
+        pageSize: 10,
+        totalPages: 1,
+        totalCount: 0
     };
 
     // khi DOM đã sẵn sàng thì gọi hàm initPage để khởi tạo page
@@ -32,6 +37,9 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
         dom.byId("btnCatSearch")?.addEventListener("click", searchCategories);      // gọi searchCategories
         dom.byId("btnCatClear")?.addEventListener("click", clearFilters);           // gọi clearFilters
         dom.byId("btnCatOpenCreate")?.addEventListener("click", openCreateModal);   // gọi openCreateModal
+
+        dom.byId("catPrevBtn")?.addEventListener("click", prevPage);
+        dom.byId("catNextBtn")?.addEventListener("click", nextPage);
 
         dom.byId("btnCatCloseX")?.addEventListener("click", closeModal);            // gọi closeModal cho nút X 
         dom.byId("btnCatCancel")?.addEventListener("click", closeModal);            // gọi closeModal khi ấn cancel 
@@ -66,10 +74,14 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
 
         // tạo queryString từ keyword 
         const kw = dom.value("kw");
-        const qs = kw ? `?Keyword=${encodeURIComponent(kw)}` : "";
+        const qs = new URLSearchParams();
+
+        qs.set("PageNumber", String(state.pageNumber));
+        qs.set("PageSize", String(state.pageSize));
+        if (kw) qs.set("Keyword", kw);
 
         // gọi API load list 
-        const result = await http.request("GET", `${API.category}${qs}`);
+        const result = await http.request("GET", `${API.category}?${qs.toString()}`);
 
         if (!result.res) {      // lỗi không gọi đc API 
             msg.show("catMsg", result.raw || "Không gọi được API.", "error");
@@ -93,8 +105,15 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
             name: x.name
         })) : [];
 
+        // thông tin phân trang trả về từ header 
+        const meta = pager.readMeta(result, state.items.length);
+        state.pageNumber = Math.max(1, Number(meta.currentPage || 1));
+        state.totalPages = Math.max(1, Number(meta.totalPages || 1));
+        state.totalCount = Math.max(0, Number(meta.totalCount || 0));
+
         // render từng row cho table 
         renderRows();
+        renderPagerInfo();
     }
 
     // đổ dữ liệu từ state.items ra HTML 
@@ -110,9 +129,12 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
 
         // nếu có data thì chạy vòng lặp join đoạn HTML này vào table
         // idx là index vị trí hiện tại của phẩn tử trong mảng, init = 0
-        tb.innerHTML = state.items.map((x, idx) => `
+        tb.innerHTML = state.items.map((x, idx) => {
+            const rowNo = ((state.pageNumber - 1) * state.pageSize) + idx + 1;
+
+            return `
             <tr>
-                <td>${idx + 1}</td>
+                <td>${rowNo}</td>
                 <td>${dom.esc(x.name || "")}</td>
                 <td>
                     <div class="row-actions">
@@ -121,7 +143,8 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
                     </div>
                 </td>
             </tr>
-        `).join("");
+            `;
+        }).join("");
 
         // gán sự kiện cho từng btn của row sau khi render 
         tb.querySelectorAll('[data-action="edit"]').forEach(btn => {
@@ -137,8 +160,36 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
         });
     }
 
+    function renderPagerInfo() {
+        const info = dom.byId("catPagerInfo");
+        const prevBtn = dom.byId("catPrevBtn");
+        const nextBtn = dom.byId("catNextBtn");
+
+        if (info) {
+            const from = state.totalCount === 0 ? 0 : ((state.pageNumber - 1) * state.pageSize) + 1;
+            const to = Math.min(state.pageNumber * state.pageSize, state.totalCount);
+            info.textContent = `Trang ${state.pageNumber} / ${state.totalPages} • ${from}-${to} / ${state.totalCount}`;
+        }
+
+        if (prevBtn) prevBtn.disabled = state.pageNumber <= 1;
+        if (nextBtn) nextBtn.disabled = state.pageNumber >= state.totalPages;
+    }
+
+    function prevPage() {
+        if (state.pageNumber <= 1) return;
+        state.pageNumber--;
+        loadCategories(false);
+    }
+
+    function nextPage() {
+        if (state.pageNumber >= state.totalPages) return;
+        state.pageNumber++;
+        loadCategories(false);
+    }
+
     // trong hàm load nó có sẵn tìm kiếm r
     function searchCategories() {
+        state.pageNumber = 1;
         loadCategories();
     }
 
@@ -146,6 +197,7 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
     function clearFilters() {
         const kw = dom.byId("kw");
         if (kw) kw.value = "";
+        state.pageNumber = 1;
         loadCategories();
     }
 
