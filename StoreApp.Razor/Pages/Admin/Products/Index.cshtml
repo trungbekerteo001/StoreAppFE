@@ -32,6 +32,7 @@
                 <button class="btn" type="button" id="btnProdClear">Reset</button>
             </div>
 
+            <button class="btn danger" type="button" id="btnProdBulkDelete">Xóa hàng loạt</button>
             <button class="btn primary" type="button" id="btnProdOpenCreate">+ Thêm</button>
         </div>
     </div>
@@ -42,6 +43,9 @@
         <table class="table" id="prodTable">
             <thead>
                 <tr>
+                    <th style="width:50px">
+                        <input type="checkbox" id="prodCheckAll" />
+                    </th>
                     <th style="width:70px">#</th>
                     <th>Tên sản phẩm</th>
                     <th style="width:250px">Ảnh</th>
@@ -54,7 +58,7 @@
                 </tr>
             </thead>
             <tbody id="prodTbody">
-                <tr><td colspan="9" class="muted">Đang tải...</td></tr>
+                <tr><td colspan="10" class="muted">Đang tải...</td></tr>
             </tbody>
         </table>
     </div>

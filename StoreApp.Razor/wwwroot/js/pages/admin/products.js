@@ -28,7 +28,8 @@ StoreApp.pages.adminProducts = (() => {
         pageNumber: 1,
         pageSize: 10,
         totalPages: 1,
-        totalCount: 0
+        totalCount: 0, 
+        selectedIds: new Set()
     };
 
         // khi DOM đã sẵn sàng thì gọi hàm initPage để khởi tạo page
@@ -50,6 +51,12 @@ StoreApp.pages.adminProducts = (() => {
         dom.byId("btnProdSearch")?.addEventListener("click", searchProducts);
         dom.byId("btnProdClear")?.addEventListener("click", clearFilters);
         dom.byId("btnProdOpenCreate")?.addEventListener("click", openCreateModal);
+
+        dom.byId("btnProdBulkDelete")?.addEventListener("click", askBulkDeleteProducts);
+
+        dom.byId("prodCheckAll")?.addEventListener("change", (e) => {
+            setCurrentProductPageSelected(e.target.checked);
+        });
 
         dom.byId("prodPrevBtn")?.addEventListener("click", prevPage);
         dom.byId("prodNextBtn")?.addEventListener("click", nextPage);
@@ -175,13 +182,13 @@ StoreApp.pages.adminProducts = (() => {
 
         if (!result.res) {
             msg.show("prodMsg", result.raw || "Không gọi được API.", "error");
-            if (tb) tb.innerHTML = `<tr><td colspan="9" class="muted">Lỗi tải dữ liệu.</td></tr>`;
+            if (tb) tb.innerHTML = `<tr><td colspan="10" class="muted">Lỗi tải dữ liệu.</td></tr>`;
             return;
         }
 
         if (!result.res.ok) {
             msg.show("prodMsg", http.getErrorText(result), "error");
-            if (tb) tb.innerHTML = `<tr><td colspan="9" class="muted">Lỗi tải dữ liệu.</td></tr>`;
+            if (tb) tb.innerHTML = `<tr><td colspan="10" class="muted">Lỗi tải dữ liệu.</td></tr>`;
             return;
         }
 
@@ -203,7 +210,7 @@ StoreApp.pages.adminProducts = (() => {
 
         const tb = dom.byId("prodTbody");
         if (tb) {
-            tb.innerHTML = `<tr><td colspan="9" class="muted">Đang tải...</td></tr>`;
+            tb.innerHTML = `<tr><td colspan="10" class="muted">Đang tải...</td></tr>`;
         }
 
         const kw = dom.value("kw");
@@ -227,13 +234,13 @@ StoreApp.pages.adminProducts = (() => {
 
         if (!result.res) {
             msg.show("prodMsg", result.raw || "Không gọi được API.", "error");
-            if (tb) tb.innerHTML = `<tr><td colspan="9" class="muted">Lỗi tải dữ liệu.</td></tr>`;
+            if (tb) tb.innerHTML = `<tr><td colspan="10" class="muted">Lỗi tải dữ liệu.</td></tr>`;
             return;
         }
 
         if (!result.res.ok) {
             msg.show("prodMsg", http.getErrorText(result), "error");
-            if (tb) tb.innerHTML = `<tr><td colspan="9" class="muted">Lỗi tải dữ liệu.</td></tr>`;
+            if (tb) tb.innerHTML = `<tr><td colspan="10" class="muted">Lỗi tải dữ liệu.</td></tr>`;
             return;
         }
 
@@ -255,13 +262,16 @@ StoreApp.pages.adminProducts = (() => {
         if (!tb) return;
 
         if (!state.items || state.items.length === 0) {
-            tb.innerHTML = `<tr><td colspan="9" class="muted">Không có dữ liệu.</td></tr>`;
+            tb.innerHTML = `<tr><td colspan="10" class="muted">Không có dữ liệu.</td></tr>`;
+            syncProductCheckAllState();
             return;
         }
 
         tb.innerHTML = state.items.map((x, idx) => {
             const rowNo = ((state.pageNumber - 1) * state.pageSize) + idx + 1;
-            const id = x.id;
+            const id = String(x.id);
+            const checked = state.selectedIds.has(id) ? "checked" : "";
+
             const name = x.productName ?? "";
             const catName = getCategoryName(x.categoryId) || "(không rõ)";
             const supName = getSupplierName(x.supplierId) || "(không rõ)";
@@ -275,34 +285,142 @@ StoreApp.pages.adminProducts = (() => {
                 : `<span class="muted">-</span>`;
 
             return `
-                <tr>
-                    <td>${rowNo}</td>
-                    <td>${dom.esc(name)}</td>
-                    <td>${imgCell}</td>
-                    <td>${dom.esc(catName)}</td>
-                    <td>${dom.esc(supName)}</td>
-                    <td>${quantity}</td>
-                    <td>${dom.esc(price)}</td>
-                    <td>${dom.esc(createdAt)}</td>
-                    <td>
-                        <div class="row-actions">
-                            <button class="btn" type="button" data-action="edit" data-id="${dom.escAttr(id)}">Sửa</button>
-                            <button class="btn danger" type="button" data-action="delete" data-id="${dom.escAttr(id)}">Xoá</button>
-                        </div>
-                    </td>
-                </tr>
-            `;
+            <tr>
+                <td>
+                    <input 
+                        type="checkbox" 
+                        class="prod-row-check" 
+                        value="${dom.escAttr(id)}" 
+                        ${checked}
+                    />
+                </td>
+                <td>${rowNo}</td>
+                <td>${dom.esc(name)}</td>
+                <td>${imgCell}</td>
+                <td>${dom.esc(catName)}</td>
+                <td>${dom.esc(supName)}</td>
+                <td>${quantity}</td>
+                <td>${dom.esc(price)}</td>
+                <td>${dom.esc(createdAt)}</td>
+                <td>
+                    <div class="row-actions">
+                        <button class="btn" type="button" data-action="edit" data-id="${dom.escAttr(id)}">Sửa</button>
+                        <button class="btn danger" type="button" data-action="delete" data-id="${dom.escAttr(id)}">Xoá</button>
+                    </div>
+                </td>
+            </tr>
+        `;
         }).join("");
 
-                // gán sự kiện cho từng nút sửa sau khi render xong table
+        tb.querySelectorAll(".prod-row-check").forEach(chk => {
+            chk.addEventListener("change", () => {
+                const id = String(chk.value);
+
+                if (chk.checked) {
+                    state.selectedIds.add(id);
+                } else {
+                    state.selectedIds.delete(id);
+                }
+
+                syncProductCheckAllState();
+            });
+        });
+
         tb.querySelectorAll('[data-action="edit"]').forEach(btn => {
             btn.addEventListener("click", () => openEditModal(btn.dataset.id));
         });
 
-                // gán sự kiện cho từng nút xóa sau khi render xong table
         tb.querySelectorAll('[data-action="delete"]').forEach(btn => {
             btn.addEventListener("click", () => askDelete(btn.dataset.id));
         });
+
+        syncProductCheckAllState();
+    }
+
+    function syncProductCheckAllState() {
+        const checkAll = dom.byId("prodCheckAll");
+        if (!checkAll) return;
+
+        const currentIds = (state.items || []).map(x => String(x.id));
+
+        if (currentIds.length === 0) {
+            checkAll.checked = false;
+            checkAll.indeterminate = false;
+            return;
+        }
+
+        const checkedCount = currentIds.filter(id => state.selectedIds.has(id)).length;
+
+        checkAll.checked = checkedCount === currentIds.length;
+        checkAll.indeterminate = checkedCount > 0 && checkedCount < currentIds.length;
+    }
+
+    function setCurrentProductPageSelected(checked) {
+        (state.items || []).forEach(x => {
+            const id = String(x.id);
+
+            if (checked) {
+                state.selectedIds.add(id);
+            } else {
+                state.selectedIds.delete(id);
+            }
+        });
+
+        dom.byId("prodTbody")?.querySelectorAll(".prod-row-check").forEach(chk => {
+            chk.checked = checked;
+        });
+
+        syncProductCheckAllState();
+    }
+
+    function askBulkDeleteProducts() {
+        const ids = Array.from(state.selectedIds);
+
+        if (ids.length === 0) {
+            msg.show("prodMsg", "Vui lòng chọn ít nhất một sản phẩm để xóa.", "error");
+            return;
+        }
+
+        if (!confirm(`Xóa ${ids.length} sản phẩm đã chọn?`)) return;
+
+        bulkDeleteProducts(ids);
+    }
+
+    async function bulkDeleteProducts(ids) {
+        const btn = dom.byId("btnProdBulkDelete");
+
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Đang xóa...";
+        }
+
+        msg.show("prodMsg", "Đang xóa hàng loạt...", "warn");
+
+        try {
+            const result = await http.request("POST", `${API.product}/bulk-delete`, { ids });
+
+            if (!result.res) {
+                msg.show("prodMsg", result.raw || "Không gọi được API.", "error");
+                return;
+            }
+
+            if (!result.res.ok) {
+                msg.show("prodMsg", http.getErrorText(result), "error");
+                return;
+            }
+
+            state.selectedIds.clear();
+
+            await loadProducts(false);
+
+            msg.show("prodMsg", "Xóa hàng loạt sản phẩm thành công.", "success");
+            setTimeout(() => msg.show("prodMsg", ""), 1800);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = "Xóa hàng loạt";
+            }
+        }
     }
 
     // hiển thị thông tin phân trang và khóa/mở nút Prev Next
@@ -326,6 +444,7 @@ StoreApp.pages.adminProducts = (() => {
 
     function searchProducts() {
         state.pageNumber = 1;
+        state.selectedIds.clear();
         loadProducts();
     }
 
@@ -345,6 +464,7 @@ StoreApp.pages.adminProducts = (() => {
         if (max) max.value = "";
 
         state.pageNumber = 1;
+        state.selectedIds.clear();
         loadProducts();
     }
 
@@ -594,6 +714,8 @@ StoreApp.pages.adminProducts = (() => {
         if (state.items.length === 1 && state.pageNumber > 1) {
             state.pageNumber--;
         }
+
+        state.selectedIds.delete(String(id));
 
         await loadProducts(false);
 

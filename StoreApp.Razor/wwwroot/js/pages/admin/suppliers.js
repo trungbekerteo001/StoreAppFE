@@ -378,6 +378,10 @@ StoreApp.pages.adminSuppliers = (() => {
             return;
         }
 
+        if (state.items.length === 1 && state.pageNumber > 1) {
+            state.pageNumber--;
+        }
+
         await loadSuppliers(false);
 
         msg.show("supMsg", "Xóa nhà cung cấp thành công.", "success");

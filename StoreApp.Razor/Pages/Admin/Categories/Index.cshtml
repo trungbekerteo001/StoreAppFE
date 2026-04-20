@@ -19,6 +19,7 @@
                 <button class="btn" type="button" id="btnCatSearch">Tìm</button>
                 <button class="btn" type="button" id="btnCatClear">Reset</button>
             </div>
+            <button class="btn danger" type="button" id="btnCatBulkDelete">Xóa hàng loạt</button>
             <button class="btn primary" type="button" id="btnCatOpenCreate">+ Thêm</button>
         </div>
     </div>
@@ -27,16 +28,19 @@
 
     <div class="table-wrap" style="margin-top:12px">
         <table class="table" id="catTable">
-            <thead>
-                <tr>
+                <thead>
+                    <tr>
+                    <th style="width:50px">
+                        <input type="checkbox" id="catCheckAll" />
+                    </th>
                     <th style="width:70px">#</th>
                     <th>Tên</th>
                     <th style="width:220px">Hành động</th>
-                </tr>
-            </thead>
-            <tbody id="catTbody">
-                <tr><td colspan="3" class="muted">Đang tải...</td></tr>
-            </tbody>
+                    </tr>
+                </thead>
+                <tbody id="catTbody">
+                    <tr><td colspan="4" class="muted">Đang tải...</td></tr>
+                </tbody>
         </table>
     </div>
 </div>

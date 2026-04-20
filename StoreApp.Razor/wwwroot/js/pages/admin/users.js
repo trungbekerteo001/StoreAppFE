@@ -49,7 +49,8 @@ StoreApp.pages.adminUsers = (() => {
         pageNumber: 1,
         pageSize: 10,
         totalPages: 1,
-        totalCount: 0
+        totalCount: 0,
+        selectedIds: new Set()
     };
 
         // khi DOM đã sẵn sàng thì gọi hàm initPage để khởi tạo page
@@ -70,6 +71,12 @@ StoreApp.pages.adminUsers = (() => {
         dom.byId("btnUsrSearch")?.addEventListener("click", searchUsers);
         dom.byId("btnUsrClear")?.addEventListener("click", clearFilters);
         dom.byId("btnUsrOpenCreate")?.addEventListener("click", openCreateModal);
+
+        dom.byId("btnUsrBulkDelete")?.addEventListener("click", askBulkDeleteUsers);
+
+        dom.byId("usrCheckAll")?.addEventListener("change", (e) => {
+            setCurrentUserPageSelected(e.target.checked);
+        });
 
         dom.byId("usrPrevBtn")?.addEventListener("click", prevPage);
         dom.byId("usrNextBtn")?.addEventListener("click", nextPage);
@@ -108,7 +115,7 @@ StoreApp.pages.adminUsers = (() => {
 
         const tb = dom.byId("usrTbody");
         if (tb) {
-            tb.innerHTML = `<tr><td colspan="6" class="muted">Đang tải...</td></tr>`;
+            tb.innerHTML = `<tr><td colspan="7" class="muted">Đang tải...</td></tr>`;
         }
 
         const kw = dom.value("kw");
@@ -124,7 +131,7 @@ StoreApp.pages.adminUsers = (() => {
         if (!result.res) {
             msg.show("usrMsg", result.raw || "Không gọi được API.", "error");
             if (tb) {
-                tb.innerHTML = `<tr><td colspan="6" class="muted">Lỗi tải dữ liệu.</td></tr>`;
+                tb.innerHTML = `<tr><td colspan="7" class="muted">Lỗi tải dữ liệu.</td></tr>`;
             }
             return;
         }
@@ -132,7 +139,7 @@ StoreApp.pages.adminUsers = (() => {
         if (!result.res.ok) {
             msg.show("usrMsg", http.getErrorText(result), "error");
             if (tb) {
-                tb.innerHTML = `<tr><td colspan="6" class="muted">Lỗi tải dữ liệu.</td></tr>`;
+                tb.innerHTML = `<tr><td colspan="7" class="muted">Lỗi tải dữ liệu.</td></tr>`;
             }
             return;
         }
@@ -155,49 +162,178 @@ StoreApp.pages.adminUsers = (() => {
         if (!tb) return;
 
         if (!state.items || state.items.length === 0) {
-            tb.innerHTML = `<tr><td colspan="6" class="muted">Không có dữ liệu.</td></tr>`;
+            tb.innerHTML = `<tr><td colspan="7" class="muted">Không có dữ liệu.</td></tr>`;
+            syncUserCheckAllState();
             return;
         }
 
-        // lấy userId hiện tại để disable nút sửa/xóa nếu đang hiển thị user đó
         const currentUserId = String(getCurrentUserIdFromToken()).toLowerCase();
 
         tb.innerHTML = state.items.map((x, idx) => {
             const rowNo = ((state.pageNumber - 1) * state.pageSize) + idx + 1;
-            const isMe = String(x.id || "").toLowerCase() === currentUserId;
+            const id = String(x.id || "");
+            const isMe = id.toLowerCase() === currentUserId;
+
+            if (isMe) {
+                state.selectedIds.delete(id);
+            }
+
+            const checked = !isMe && state.selectedIds.has(id) ? "checked" : "";
+            const disabled = isMe ? "disabled title='Không thể tự xóa chính mình'" : "";
 
             return `
-                <tr>
-                    <td>${rowNo}</td>
-                    <td>
-                        <div class="cell-main">${dom.esc(x.username)}</div>
-                        <div class="cell-sub">${dom.esc(x.id)}</div>
-                    </td>
-                    <td>${dom.esc(x.fullName)}</td>
-                    <td>${dom.esc(x.phone)}</td>
-                    <td><span class="badge">${dom.esc(x.role)}</span></td>
-                    <td>
-                        <div class="actions">
-                            <button class="btn" type="button" data-action="edit" data-id="${dom.escAttr(x.id)}">Sửa</button>
-                            ${isMe
-                                ? `<button class="btn" type="button" disabled title="Không thể tự xóa">Chính bạn</button>`
-                                : `<button class="btn danger" type="button" data-action="delete" data-id="${dom.escAttr(x.id)}">Xóa</button>`
-                            }
-                        </div>
-                    </td>
-                </tr>
-            `;
+            <tr>
+                <td>
+                    <input 
+                        type="checkbox" 
+                        class="usr-row-check" 
+                        value="${dom.escAttr(id)}" 
+                        ${checked}
+                        ${disabled}
+                    />
+                </td>
+                <td>${rowNo}</td>
+                <td>
+                    <div class="cell-main">${dom.esc(x.username)}</div>
+                    <div class="cell-sub">${dom.esc(x.id)}</div>
+                </td>
+                <td>${dom.esc(x.fullName)}</td>
+                <td>${dom.esc(x.phone)}</td>
+                <td><span class="badge">${dom.esc(x.role)}</span></td>
+                <td>
+                    <div class="actions">
+                        <button class="btn" type="button" data-action="edit" data-id="${dom.escAttr(x.id)}">Sửa</button>
+                        ${isMe
+                    ? `<button class="btn" type="button" disabled title="Không thể tự xóa">Chính bạn</button>`
+                    : `<button class="btn danger" type="button" data-action="delete" data-id="${dom.escAttr(x.id)}">Xóa</button>`
+                }
+                    </div>
+                </td>
+            </tr>
+        `;
         }).join("");
 
-                // gán sự kiện cho từng nút sửa sau khi render xong table
+        tb.querySelectorAll(".usr-row-check").forEach(chk => {
+            chk.addEventListener("change", () => {
+                const id = String(chk.value);
+
+                if (chk.disabled) return;
+
+                if (chk.checked) {
+                    state.selectedIds.add(id);
+                } else {
+                    state.selectedIds.delete(id);
+                }
+
+                syncUserCheckAllState();
+            });
+        });
+
         tb.querySelectorAll('[data-action="edit"]').forEach(btn => {
             btn.addEventListener("click", () => openEditModal(btn.dataset.id));
         });
 
-                // gán sự kiện cho từng nút xóa sau khi render xong table
         tb.querySelectorAll('[data-action="delete"]').forEach(btn => {
             btn.addEventListener("click", () => askDelete(btn.dataset.id));
         });
+
+        syncUserCheckAllState();
+    }
+
+    function syncUserCheckAllState() {
+        const checkAll = dom.byId("usrCheckAll");
+        if (!checkAll) return;
+
+        const currentUserId = String(getCurrentUserIdFromToken()).toLowerCase();
+
+        const currentIds = (state.items || [])
+            .map(x => String(x.id || ""))
+            .filter(id => id && id.toLowerCase() !== currentUserId);
+
+        if (currentIds.length === 0) {
+            checkAll.checked = false;
+            checkAll.indeterminate = false;
+            return;
+        }
+
+        const checkedCount = currentIds.filter(id => state.selectedIds.has(id)).length;
+
+        checkAll.checked = checkedCount === currentIds.length;
+        checkAll.indeterminate = checkedCount > 0 && checkedCount < currentIds.length;
+    }
+
+    function setCurrentUserPageSelected(checked) {
+        const currentUserId = String(getCurrentUserIdFromToken()).toLowerCase();
+
+        (state.items || []).forEach(x => {
+            const id = String(x.id || "");
+
+            if (!id || id.toLowerCase() === currentUserId) return;
+
+            if (checked) {
+                state.selectedIds.add(id);
+            } else {
+                state.selectedIds.delete(id);
+            }
+        });
+
+        dom.byId("usrTbody")?.querySelectorAll(".usr-row-check").forEach(chk => {
+            if (!chk.disabled) {
+                chk.checked = checked;
+            }
+        });
+
+        syncUserCheckAllState();
+    }
+
+    function askBulkDeleteUsers() {
+        const ids = Array.from(state.selectedIds);
+
+        if (ids.length === 0) {
+            msg.show("usrMsg", "Vui lòng chọn ít nhất một người dùng để xóa.", "error");
+            return;
+        }
+
+        if (!confirm(`Xóa ${ids.length} người dùng đã chọn?`)) return;
+
+        bulkDeleteUsers(ids);
+    }
+
+    async function bulkDeleteUsers(ids) {
+        const btn = dom.byId("btnUsrBulkDelete");
+
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Đang xóa...";
+        }
+
+        msg.show("usrMsg", "Đang xóa hàng loạt...", "warn");
+
+        try {
+            const result = await http.request("POST", `${API.user}/bulk-delete`, { ids });
+
+            if (!result.res) {
+                msg.show("usrMsg", result.raw || "Không gọi được API.", "error");
+                return;
+            }
+
+            if (!result.res.ok) {
+                msg.show("usrMsg", http.getErrorText(result), "error");
+                return;
+            }
+
+            state.selectedIds.clear();
+
+            await loadUsers(false);
+
+            msg.show("usrMsg", "Xóa hàng loạt người dùng thành công.", "success");
+            setTimeout(() => msg.show("usrMsg", ""), 1800);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = "Xóa hàng loạt";
+            }
+        }
     }
 
     // hiển thị thông tin phân trang và trạng thái nút Prev Next
@@ -221,6 +357,7 @@ StoreApp.pages.adminUsers = (() => {
 
     function searchUsers() {
         state.pageNumber = 1;
+        state.selectedIds.clear();
         loadUsers();
     }
 
@@ -231,6 +368,7 @@ StoreApp.pages.adminUsers = (() => {
         if (kw) kw.value = "";
 
         state.pageNumber = 1;
+        state.selectedIds.clear();
         loadUsers();
     }
 
@@ -432,6 +570,8 @@ StoreApp.pages.adminUsers = (() => {
         if (state.items.length === 1 && state.pageNumber > 1) {
             state.pageNumber--;
         }
+
+        state.selectedIds.clear();
 
         await loadUsers(false);
 

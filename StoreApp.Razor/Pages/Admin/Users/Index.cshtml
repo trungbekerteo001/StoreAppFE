@@ -20,6 +20,7 @@
                 <button class="btn" type="button" id="btnUsrClear">Reset</button>
             </div>
 
+            <button class="btn danger" type="button" id="btnUsrBulkDelete">Xóa hàng loạt</button>
             <button class="btn primary" type="button" id="btnUsrOpenCreate">+ Thêm</button>
         </div>
     </div>
@@ -30,6 +31,9 @@
         <table class="table" id="usrTable">
             <thead>
                 <tr>
+                    <th style="width:50px">
+                        <input type="checkbox" id="usrCheckAll" />
+                    </th>
                     <th style="width:70px">#</th>
                     <th style="min-width:160px">Username</th>
                     <th style="min-width:220px">Họ tên</th>
@@ -39,7 +43,7 @@
                 </tr>
             </thead>
             <tbody id="usrTbody">
-                <tr><td colspan="6" class="muted">Đang tải...</td></tr>
+                <tr><td colspan="7" class="muted">Đang tải...</td></tr>
             </tbody>
         </table>
     </div>

@@ -31,6 +31,7 @@
                 <button class="btn" type="button" id="btnGrnClear">Reset</button>
             </div>
 
+            <button class="btn danger" type="button" id="btnGrnBulkDelete">Xóa hàng loạt</button>
             <button class="btn primary" type="button" id="btnGrnOpenCreate">+ Thêm phiếu nhập</button>
         </div>
     </div>
@@ -41,6 +42,9 @@
         <table class="table" id="grnTable">
             <thead>
                 <tr>
+                    <th style="width:50px">
+                        <input type="checkbox" id="grnCheckAll" />
+                    </th>
                     <th style="width:72px">#</th>
                     <th style="width:220px">Mã phiếu</th>
                     <th>Supplier</th>
@@ -53,7 +57,7 @@
                 </tr>
             </thead>
             <tbody id="grnTbody">
-                <tr><td colspan="9" class="muted">Đang tải...</td></tr>
+                <tr><td colspan="10" class="muted">Đang tải...</td></tr>
             </tbody>
         </table>
     </div>

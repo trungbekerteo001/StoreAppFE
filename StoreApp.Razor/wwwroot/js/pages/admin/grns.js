@@ -27,7 +27,8 @@ StoreApp.pages.adminGrn = (() => {
         pageNumber: 1,
         pageSize: 10,
         totalPages: 1,
-        totalCount: 0
+        totalCount: 0,
+        selectedIds: new Set()
     };
 
     // khi DOM đã sẵn sàng thì gọi hàm initPage để khởi tạo page
@@ -48,6 +49,12 @@ StoreApp.pages.adminGrn = (() => {
         dom.byId("btnGrnSearch")?.addEventListener("click", searchGrns);
         dom.byId("btnGrnClear")?.addEventListener("click", clearFilters);
         dom.byId("btnGrnOpenCreate")?.addEventListener("click", openCreateModal);
+
+        dom.byId("btnGrnBulkDelete")?.addEventListener("click", askBulkDeleteGrns);
+
+        dom.byId("grnCheckAll")?.addEventListener("change", (e) => {
+            setCurrentGrnPageSelected(e.target.checked);
+        });
 
         dom.byId("grnPrevBtn")?.addEventListener("click", prevPage);
         dom.byId("grnNextBtn")?.addEventListener("click", nextPage);
@@ -189,19 +196,19 @@ StoreApp.pages.adminGrn = (() => {
         if (status) qs.set("GRNStatus", status);
 
         const tb = dom.byId("grnTbody");
-        if (tb) tb.innerHTML = `<tr><td colspan="9" class="muted">Đang tải...</td></tr>`;
+        if (tb) tb.innerHTML = `<tr><td colspan="10" class="muted">Đang tải...</td></tr>`;
 
         const result = await http.request("GET", `${API.grn}?${qs.toString()}`);
 
         if (!result.res) {
             msg.show("grnMsg", result.raw || "Không gọi được API.", "error");
-            if (tb) tb.innerHTML = `<tr><td colspan="9" class="muted">Lỗi tải dữ liệu.</td></tr>`;
+            if (tb) tb.innerHTML = `<tr><td colspan="10" class="muted">Lỗi tải dữ liệu.</td></tr>`;
             return;
         }
 
         if (!result.res.ok) {
             msg.show("grnMsg", http.getErrorText(result), "error");
-            if (tb) tb.innerHTML = `<tr><td colspan="9" class="muted">Lỗi tải dữ liệu.</td></tr>`;
+            if (tb) tb.innerHTML = `<tr><td colspan="10" class="muted">Lỗi tải dữ liệu.</td></tr>`;
             return;
         }
 
@@ -222,57 +229,184 @@ StoreApp.pages.adminGrn = (() => {
         if (!tb) return;
 
         if (!state.items.length) {
-            tb.innerHTML = `<tr><td colspan="9" class="muted">Không có dữ liệu.</td></tr>`;
+            tb.innerHTML = `<tr><td colspan="10" class="muted">Không có dữ liệu.</td></tr>`;
+            syncGrnCheckAllState();
             return;
         }
 
         tb.innerHTML = state.items.map((x, idx) => {
             const supplier = supplierName(x.supplierId) || x.supplierId || "—";
             const totals = calcTotals(x.items);
-            const canEdit = String(x.grnStatus || "").toLowerCase() === "pending";
+            const status = String(x.grnStatus || "").toLowerCase();
+            const canEdit = status === "pending";
+            const canBulkDelete = status !== "completed";
             const rowNo = ((state.pageNumber - 1) * state.pageSize) + idx + 1;
+            const id = String(x.id);
+
+            if (!canBulkDelete) {
+                state.selectedIds.delete(id);
+            }
+
+            const checked = canBulkDelete && state.selectedIds.has(id) ? "checked" : "";
+            const disabled = canBulkDelete ? "" : "disabled title='Không thể xóa phiếu nhập đã hoàn thành'";
 
             return `
-                <tr>
-                    <td>${rowNo}</td>
-                    <td><div class="code" title="${dom.escAttr(x.id)}">${dom.esc(shortId(x.id))}</div></td>
-                    <td>${dom.esc(supplier)}</td>
-                    <td><span class="badge ${statusClass(x.grnStatus)}">${dom.esc(statusText(x.grnStatus))}</span></td>
-                    <td>${totals.lines}</td>
-                    <td>${totals.qty}</td>
-                    <td>${fmtMoney(totals.amount)}</td>
-                    <td>${dom.esc(fmtDate(x.updatedAt))}</td>
-                    <td>
-                        <div class="row-actions">
-                            <button class="btn" type="button" data-action="view" data-id="${dom.escAttr(x.id)}">Xem</button>
-                            ${canEdit ? `<button class="btn" type="button" data-action="edit" data-id="${dom.escAttr(x.id)}">Sửa</button>` : ""}
-                            ${canEdit ? `<button class="btn" type="button" data-action="complete" data-id="${dom.escAttr(x.id)}">Duyệt</button>` : ""}
-                            ${canEdit ? `<button class="btn danger" type="button" data-action="cancel" data-id="${dom.escAttr(x.id)}">Hủy</button>` : ""}
-                        </div>
-                    </td>
-                </tr>
-            `;
+            <tr>
+                <td>
+                    <input 
+                        type="checkbox" 
+                        class="grn-row-check" 
+                        value="${dom.escAttr(id)}" 
+                        ${checked}
+                        ${disabled}
+                    />
+                </td>
+                <td>${rowNo}</td>
+                <td><div class="code" title="${dom.escAttr(x.id)}">${dom.esc(shortId(x.id))}</div></td>
+                <td>${dom.esc(supplier)}</td>
+                <td><span class="badge ${statusClass(x.grnStatus)}">${dom.esc(statusText(x.grnStatus))}</span></td>
+                <td>${totals.lines}</td>
+                <td>${totals.qty}</td>
+                <td>${fmtMoney(totals.amount)}</td>
+                <td>${dom.esc(fmtDate(x.updatedAt))}</td>
+                <td>
+                    <div class="row-actions">
+                        <button class="btn" type="button" data-action="view" data-id="${dom.escAttr(x.id)}">Xem</button>
+                        ${canEdit ? `<button class="btn" type="button" data-action="edit" data-id="${dom.escAttr(x.id)}">Sửa</button>` : ""}
+                        ${canEdit ? `<button class="btn" type="button" data-action="complete" data-id="${dom.escAttr(x.id)}">Duyệt</button>` : ""}
+                        ${canEdit ? `<button class="btn danger" type="button" data-action="cancel" data-id="${dom.escAttr(x.id)}">Hủy</button>` : ""}
+                    </div>
+                </td>
+            </tr>
+        `;
         }).join("");
 
-                // gán sự kiện cho từng nút xem chi tiết sau khi render
+        tb.querySelectorAll(".grn-row-check").forEach(chk => {
+            chk.addEventListener("change", () => {
+                const id = String(chk.value);
+
+                if (chk.disabled) return;
+
+                if (chk.checked) {
+                    state.selectedIds.add(id);
+                } else {
+                    state.selectedIds.delete(id);
+                }
+
+                syncGrnCheckAllState();
+            });
+        });
+
         tb.querySelectorAll('[data-action="view"]').forEach(btn => {
             btn.addEventListener("click", () => openView(btn.dataset.id));
         });
 
-                // gán sự kiện cho từng nút sửa sau khi render xong table
         tb.querySelectorAll('[data-action="edit"]').forEach(btn => {
             btn.addEventListener("click", () => openEdit(btn.dataset.id));
         });
 
-                // gán sự kiện cho từng nút duyệt phiếu nhập sau khi render
         tb.querySelectorAll('[data-action="complete"]').forEach(btn => {
             btn.addEventListener("click", () => askComplete(btn.dataset.id));
         });
 
-                // gán sự kiện cho từng nút hủy sau khi render
         tb.querySelectorAll('[data-action="cancel"]').forEach(btn => {
             btn.addEventListener("click", () => askCancel(btn.dataset.id));
         });
+
+        syncGrnCheckAllState();
+    }
+
+    function syncGrnCheckAllState() {
+        const checkAll = dom.byId("grnCheckAll");
+        if (!checkAll) return;
+
+        const currentIds = (state.items || [])
+            .filter(x => String(x.grnStatus || "").toLowerCase() !== "completed")
+            .map(x => String(x.id));
+
+        if (currentIds.length === 0) {
+            checkAll.checked = false;
+            checkAll.indeterminate = false;
+            return;
+        }
+
+        const checkedCount = currentIds.filter(id => state.selectedIds.has(id)).length;
+
+        checkAll.checked = checkedCount === currentIds.length;
+        checkAll.indeterminate = checkedCount > 0 && checkedCount < currentIds.length;
+    }
+
+    function setCurrentGrnPageSelected(checked) {
+        (state.items || []).forEach(x => {
+            const id = String(x.id);
+            const canBulkDelete = String(x.grnStatus || "").toLowerCase() !== "completed";
+
+            if (!canBulkDelete) return;
+
+            if (checked) {
+                state.selectedIds.add(id);
+            } else {
+                state.selectedIds.delete(id);
+            }
+        });
+
+        dom.byId("grnTbody")?.querySelectorAll(".grn-row-check").forEach(chk => {
+            if (!chk.disabled) {
+                chk.checked = checked;
+            }
+        });
+
+        syncGrnCheckAllState();
+    }
+
+    function askBulkDeleteGrns() {
+        const ids = Array.from(state.selectedIds);
+
+        if (ids.length === 0) {
+            msg.show("grnMsg", "Vui lòng chọn ít nhất một phiếu nhập để xóa.", "error");
+            return;
+        }
+
+        if (!confirm(`Xóa ${ids.length} phiếu nhập đã chọn?`)) return;
+
+        bulkDeleteGrns(ids);
+    }
+
+    async function bulkDeleteGrns(ids) {
+        const btn = dom.byId("btnGrnBulkDelete");
+
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Đang xóa...";
+        }
+
+        msg.show("grnMsg", "Đang xóa hàng loạt...", "warn");
+
+        try {
+            const result = await http.request("POST", `${API.grn}/bulk-delete`, { ids });
+
+            if (!result.res) {
+                msg.show("grnMsg", result.raw || "Không gọi được API.", "error");
+                return;
+            }
+
+            if (!result.res.ok) {
+                msg.show("grnMsg", http.getErrorText(result), "error");
+                return;
+            }
+
+            state.selectedIds.clear();
+
+            await loadGrns(false);
+
+            msg.show("grnMsg", "Xóa hàng loạt phiếu nhập thành công.", "success");
+            setTimeout(() => msg.show("grnMsg", ""), 1800);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = "Xóa hàng loạt";
+            }
+        }
     }
 
     // hiển thị thông tin phân trang và khóa/mở nút Prev Next
@@ -308,6 +442,7 @@ StoreApp.pages.adminGrn = (() => {
     // tìm kiếm lại dữ liệu từ trang 1 theo bộ lọc hiện tại
     function searchGrns() {
         state.pageNumber = 1;
+        state.selectedIds.clear();
         loadGrns();
     }
 
@@ -320,6 +455,7 @@ StoreApp.pages.adminGrn = (() => {
         if (status) status.value = "";
 
         state.pageNumber = 1;
+        state.selectedIds.clear();
         loadGrns();
     }
 

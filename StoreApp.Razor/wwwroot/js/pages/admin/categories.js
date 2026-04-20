@@ -20,7 +20,9 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
         pageNumber: 1,
         pageSize: 10,
         totalPages: 1,
-        totalCount: 0
+        totalCount: 0,
+
+        selectedIds: new Set() // dùng Set để lưu id các category được chọn xóa
     };
 
     // khi DOM đã sẵn sàng thì gọi hàm initPage để khởi tạo page
@@ -38,7 +40,13 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
         dom.byId("btnCatClear")?.addEventListener("click", clearFilters);           // gọi clearFilters
         dom.byId("btnCatOpenCreate")?.addEventListener("click", openCreateModal);   // gọi openCreateModal
 
-        dom.byId("catPrevBtn")?.addEventListener("click", prevPage);
+        dom.byId("btnCatBulkDelete")?.addEventListener("click", askBulkDelete);     // link vào nút xóa nhiều
+
+        dom.byId("catCheckAll")?.addEventListener("change", (e) => {                // link vào checkbox chọn tất cả    
+            setCurrentPageSelected(e.target.checked);
+        });
+
+        dom.byId("catPrevBtn")?.addEventListener("click", prevPage);    
         dom.byId("catNextBtn")?.addEventListener("click", nextPage);
 
         dom.byId("btnCatCloseX")?.addEventListener("click", closeModal);            // gọi closeModal cho nút X 
@@ -69,7 +77,7 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
         const tb = dom.byId("catTbody");
         // hiện trạng thái đang tải trong table 
         if (tb) {
-            tb.innerHTML = `<tr><td colspan="3" class="muted">Đang tải...</td></tr>`;
+            tb.innerHTML = `<tr><td colspan="4" class="muted">Đang tải...</td></tr>`;
         }
 
         // tạo queryString từ keyword 
@@ -86,7 +94,7 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
         if (!result.res) {      // lỗi không gọi đc API 
             msg.show("catMsg", result.raw || "Không gọi được API.", "error");
             if (tb) {
-                tb.innerHTML = `<tr><td colspan="3" class="muted">Lỗi tải dữ liệu.</td></tr>`;
+                tb.innerHTML = `<tr><td colspan="4" class="muted">Lỗi tải dữ liệu.</td></tr>`;
             }
             return;
         }
@@ -94,7 +102,7 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
         if (!result.res.ok) {   // API 400, 500...
             msg.show("catMsg", http.getErrorText(result), "error");
             if (tb) {
-                tb.innerHTML = `<tr><td colspan="3" class="muted">Lỗi tải dữ liệu.</td></tr>`;
+                tb.innerHTML = `<tr><td colspan="4" class="muted">Lỗi tải dữ liệu.</td></tr>`;
             }
             return;
         }
@@ -117,47 +125,152 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
     }
 
     // đổ dữ liệu từ state.items ra HTML 
-    function renderRows() {
+     function renderRows() {
         const tb = dom.byId("catTbody");
         if (!tb) return;
 
-        // nếu không có data 
         if (!state.items || state.items.length === 0) {
-            tb.innerHTML = `<tr><td colspan="3" class="muted">Không có dữ liệu.</td></tr>`;
+            tb.innerHTML = `<tr><td colspan="4" class="muted">Không có dữ liệu.</td></tr>`;
+            syncCheckAllState();
             return;
         }
 
-        // nếu có data thì chạy vòng lặp join đoạn HTML này vào table
-        // idx là index vị trí hiện tại của phẩn tử trong mảng, init = 0
         tb.innerHTML = state.items.map((x, idx) => {
             const rowNo = ((state.pageNumber - 1) * state.pageSize) + idx + 1;
+            const id = String(x.id);
+            const checked = state.selectedIds.has(id) ? "checked" : "";
 
             return `
-            <tr>
-                <td>${rowNo}</td>
-                <td>${dom.esc(x.name || "")}</td>
-                <td>
-                    <div class="row-actions">
-                        <button class="btn" type="button" data-action="edit" data-id="${dom.escAttr(x.id)}">Sửa</button>
-                        <button class="btn danger" type="button" data-action="delete" data-id="${dom.escAttr(x.id)}">Xóa</button>
-                    </div>
-                </td>
-            </tr>
-            `;
+        <tr>
+            <td>
+                <input
+                    type="checkbox"
+                    class="cat-row-check"
+                    value="${dom.escAttr(id)}"
+                    ${checked}
+                />
+            </td>
+            <td>${rowNo}</td>
+            <td>${dom.esc(x.name || "")}</td>
+            <td>
+                <div class="row-actions">
+                    <button class="btn" type="button" data-action="edit" data-id="${dom.escAttr(x.id)}">Sửa</button>
+                    <button class="btn danger" type="button" data-action="delete" data-id="${dom.escAttr(x.id)}">Xóa</button>
+                </div>
+            </td>
+        </tr>
+        `;
         }).join("");
 
-        // gán sự kiện cho từng btn của row sau khi render 
+        tb.querySelectorAll(".cat-row-check").forEach(chk => {
+            chk.addEventListener("change", () => {
+                const id = String(chk.value);
+
+                if (chk.checked) {
+                    state.selectedIds.add(id);
+                } else {
+                    state.selectedIds.delete(id);
+                }
+
+                syncCheckAllState();
+            });
+        });
+
         tb.querySelectorAll('[data-action="edit"]').forEach(btn => {
             btn.addEventListener("click", () => openEditModal(btn.dataset.id));
-            // vd nút được render là <button class="btn" type="button" data-action="edit" data-id=
-            // thì btn.dataset.action là edit, btn.dataset.id là đoạn sau  
         });
 
         tb.querySelectorAll('[data-action="delete"]').forEach(btn => {
             btn.addEventListener("click", () => askDelete(btn.dataset.id));
-            // vd nút được render là <button class="btn" type="button" data-action="delete" data-id=
-            // thì btn.dataset.action là delete, btn.dataset.id là đoạn sau  
         });
+
+        syncCheckAllState();
+    }
+
+    function syncCheckAllState() {
+        const checkAll = dom.byId("catCheckAll");
+        if (!checkAll) return;
+
+        const currentIds = (state.items || []).map(x => String(x.id));
+
+        if (currentIds.length === 0) {
+            checkAll.checked = false;
+            checkAll.indeterminate = false;
+            return;
+        }
+
+        const checkedCount = currentIds.filter(id => state.selectedIds.has(id)).length;
+
+        checkAll.checked = checkedCount === currentIds.length;
+        checkAll.indeterminate = checkedCount > 0 && checkedCount < currentIds.length;
+    }
+
+    function setCurrentPageSelected(checked) {
+        (state.items || []).forEach(x => {
+            const id = String(x.id);
+
+            if (checked) {
+                state.selectedIds.add(id);
+            } else {
+                state.selectedIds.delete(id);
+            }
+        });
+
+        dom.byId("catTbody")?.querySelectorAll(".cat-row-check").forEach(chk => {
+            chk.checked = checked;
+        });
+
+        syncCheckAllState();
+    }
+
+    function askBulkDelete() {
+        const ids = Array.from(state.selectedIds);
+
+        if (ids.length === 0) {
+            msg.show("catMsg", "Vui lòng chọn ít nhất một danh mục để xóa.", "error");
+            return;
+        }
+
+        if (!confirm(`Xóa ${ids.length} danh mục đã chọn?`)) return;
+
+        bulkDeleteCategories(ids);
+    }
+
+    async function bulkDeleteCategories(ids) {
+        const btn = dom.byId("btnCatBulkDelete");
+
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Đang xóa...";
+        }
+
+        msg.show("catMsg", "Đang xóa hàng loạt...", "warn");
+
+        try {
+            const result = await http.request("POST", `${API.category}/bulk-delete`, { ids });
+
+            if (!result.res) {
+                msg.show("catMsg", result.raw || "Không gọi được API.", "error");
+                return;
+            }
+
+            if (!result.res.ok) {
+                msg.show("catMsg", http.getErrorText(result), "error");
+                return;
+            }
+
+            state.selectedIds.clear();
+
+            await loadCategories(false);
+
+            msg.show("catMsg", "Xóa hàng loạt danh mục thành công.", "success");
+            setTimeout(() => msg.show("catMsg", ""), 1800);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = "Xóa hàng loạt";
+            }
+        }
     }
 
     function renderPagerInfo() {
@@ -190,6 +303,7 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
     // trong hàm load nó có sẵn tìm kiếm r
     function searchCategories() {
         state.pageNumber = 1;
+        state.selectedIds.clear();
         loadCategories();
     }
 
@@ -198,6 +312,7 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
         const kw = dom.byId("kw");
         if (kw) kw.value = "";
         state.pageNumber = 1;
+        state.selectedIds.clear();
         loadCategories();
     }
 
@@ -340,6 +455,12 @@ StoreApp.pages.adminCategories = (() => {       // IIFE - hàm và biến trong 
             msg.show("catMsg", http.getErrorText(result), "error");
             return;
         }
+
+        if (state.items.length === 1 && state.pageNumber > 1) {
+            state.pageNumber--;
+        }
+
+        state.selectedIds.delete(String(id));
 
         // reload lại 
         await loadCategories(false);
