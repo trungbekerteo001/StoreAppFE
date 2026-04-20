@@ -177,11 +177,21 @@ StoreApp.pages.adminUsers = (() => {
                     <td>${dom.esc(x.phone)}</td>
                     <td><span class="badge">${dom.esc(x.role)}</span></td>
                     <td>
+                        ${x.isLocked
+                        ? `<span class="badge danger">Đã khóa</span>`
+                        : `<span class="badge success">Hoạt động</span>`
+                        }
+                    </td>
+                    <td>
                         <div class="actions">
                             <button class="btn" type="button" data-action="edit" data-id="${dom.escAttr(x.id)}">Sửa</button>
                             ${isMe
-                                ? `<button class="btn" type="button" disabled title="Không thể tự xóa">Chính bạn</button>`
-                                : `<button class="btn danger" type="button" data-action="delete" data-id="${dom.escAttr(x.id)}">Xóa</button>`
+                                ? `<button class="btn" type="button" disabled title="Không thể tự khóa/xóa">Chính bạn</button>`
+                                : `${x.isLocked
+                                    ? `<button class="btn primary" type="button" data-action="unlock" data-id="${dom.escAttr(x.id)}">Mở khóa</button>`
+                                    : `<button class="btn warn" type="button" data-action="lock" data-id="${dom.escAttr(x.id)}">Khóa</button>`
+                                }
+                            <button class="btn danger" type="button" data-action="delete" data-id="${dom.escAttr(x.id)}">Xóa</button>`
                             }
                         </div>
                     </td>
@@ -197,6 +207,14 @@ StoreApp.pages.adminUsers = (() => {
                 // gán sự kiện cho từng nút xóa sau khi render xong table
         tb.querySelectorAll('[data-action="delete"]').forEach(btn => {
             btn.addEventListener("click", () => askDelete(btn.dataset.id));
+        });
+
+        tb.querySelectorAll('[data-action="lock"]').forEach(btn => {
+            btn.addEventListener("click", () => askLock(btn.dataset.id));
+        });
+
+        tb.querySelectorAll('[data-action="unlock"]').forEach(btn => {
+            btn.addEventListener("click", () => askUnlock(btn.dataset.id));
         });
     }
 
@@ -436,6 +454,53 @@ StoreApp.pages.adminUsers = (() => {
         await loadUsers(false);
 
         msg.show("usrMsg", "Xóa user thành công.", "success");
+        setTimeout(() => msg.show("usrMsg", ""), 1800);
+    }
+
+    function askLock(id) {
+        const currentUserId = String(getCurrentUserIdFromToken()).toLowerCase();
+
+        if (String(id).toLowerCase() === currentUserId) {
+            msg.show("usrMsg", "Bạn không thể tự khóa tài khoản đang đăng nhập.", "error");
+            return;
+        }
+
+        const item = state.items.find(x =>
+            String(x.id).toLowerCase() === String(id).toLowerCase()
+        );
+
+        const name = item?.username || id;
+        if (!confirm(`Khóa tài khoản "${name}" ?`)) return;
+        changeLockStatus(id, true);
+    }
+
+    function askUnlock(id) {
+        const item = state.items.find(x =>
+            String(x.id).toLowerCase() === String(id).toLowerCase()
+        );
+
+        const name = item?.username || id;
+        if (!confirm(`Mở khóa tài khoản "${name}" ?`)) return;
+        changeLockStatus(id, false);
+    }
+
+    async function changeLockStatus(id, shouldLock) {
+        const action = shouldLock ? "lock" : "unlock";
+        const result = await http.request("PUT", `${API.user}/${encodeURIComponent(id)}/${action}`);
+
+        if (!result.res) {
+            msg.show("usrMsg", result.raw || "Không gọi được API.", "error");
+            return;
+        }
+
+        if (!result.res.ok) {
+            msg.show("usrMsg", http.getErrorText(result), "error");
+            return;
+        }
+
+        await loadUsers(false);
+
+        msg.show("usrMsg", shouldLock ? "Đã khóa tài khoản." : "Đã mở khóa tài khoản.", "success");
         setTimeout(() => msg.show("usrMsg", ""), 1800);
     }
 

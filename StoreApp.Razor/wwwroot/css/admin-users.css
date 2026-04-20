@@ -313,3 +313,17 @@
     font-weight: 600;
     opacity: .8;
 }
+.btn.warn {
+    border-color: rgba(255,193,7,.45);
+    background: rgba(255,193,7,.14);
+}
+
+.badge.success {
+    border-color: rgba(47,214,111,.45);
+    background: rgba(47,214,111,.14);
+}
+
+.badge.danger {
+    border-color: rgba(255,76,92,.45);
+    background: rgba(255,76,92,.14);
+}

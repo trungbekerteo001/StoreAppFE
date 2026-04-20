@@ -22,6 +22,7 @@ StoreApp.pages.adminProducts = (() => {
         imageUrl: "",        // url ảnh hiện tại trong modal
 
         items: [],           // danh sách product của trang hiện tại
+        isDeletedView: false,
         categories: [],      // cache categories
         suppliers: [],       // cache suppliers
 
@@ -50,6 +51,7 @@ StoreApp.pages.adminProducts = (() => {
         dom.byId("btnProdSearch")?.addEventListener("click", searchProducts);
         dom.byId("btnProdClear")?.addEventListener("click", clearFilters);
         dom.byId("btnProdOpenCreate")?.addEventListener("click", openCreateModal);
+        dom.byId("btnProdToggleDeleted")?.addEventListener("click", toggleDeletedView);
 
         dom.byId("prodPrevBtn")?.addEventListener("click", prevPage);
         dom.byId("prodNextBtn")?.addEventListener("click", nextPage);
@@ -223,7 +225,8 @@ StoreApp.pages.adminProducts = (() => {
         if (minPrice) qs.set("MinPrice", minPrice);
         if (maxPrice) qs.set("MaxPrice", maxPrice);
 
-        const result = await http.request("GET", `${API.product}?${qs.toString()}`);
+        const endpoint = state.isDeletedView ? `${API.product}/deleted` : API.product;
+        const result = await http.request("GET", `${endpoint}?${qs.toString()}`);
 
         if (!result.res) {
             msg.show("prodMsg", result.raw || "Không gọi được API.", "error");
@@ -246,8 +249,29 @@ StoreApp.pages.adminProducts = (() => {
 
         renderRows();
         renderPagerInfo();
+        renderModeButtons();
     }
 
+    function renderModeButtons() {
+        const toggleBtn = dom.byId("btnProdToggleDeleted");
+        const createBtn = dom.byId("btnProdOpenCreate");
+
+        if (toggleBtn) {
+            toggleBtn.textContent = state.isDeletedView ? "Xem sản phẩm đang bán" : "Xem sản phẩm đã xóa";
+        }
+
+        if (createBtn) {
+            createBtn.disabled = !!state.isDeletedView;
+            createBtn.title = state.isDeletedView ? "Không tạo mới trong danh sách đã xóa" : "";
+        }
+    }
+
+    function toggleDeletedView() {
+        state.isDeletedView = !state.isDeletedView;
+        state.pageNumber = 1;
+        msg.show("prodMsg", state.isDeletedView ? "Đang xem danh sách sản phẩm đã xóa mềm." : "Đang xem danh sách sản phẩm đang bán.", "warn");
+        loadProducts(false);
+    }
     // render từng product ra table và gán sự kiện cho các nút sau khi render
 
     function renderRows() {
@@ -286,8 +310,11 @@ StoreApp.pages.adminProducts = (() => {
                     <td>${dom.esc(createdAt)}</td>
                     <td>
                         <div class="row-actions">
-                            <button class="btn" type="button" data-action="edit" data-id="${dom.escAttr(id)}">Sửa</button>
-                            <button class="btn danger" type="button" data-action="delete" data-id="${dom.escAttr(id)}">Xoá</button>
+                            ${state.isDeletedView
+                                ? `<button class="btn primary" type="button" data-action="restore" data-id="${dom.escAttr(id)}">Khôi phục</button>`
+                                : `<button class="btn" type="button" data-action="edit" data-id="${dom.escAttr(id)}">Sửa</button>
+                                <button class="btn danger" type="button" data-action="delete" data-id="${dom.escAttr(id)}">Xoá</button>`
+                            }
                         </div>
                     </td>
                 </tr>
@@ -303,6 +330,10 @@ StoreApp.pages.adminProducts = (() => {
         tb.querySelectorAll('[data-action="delete"]').forEach(btn => {
             btn.addEventListener("click", () => askDelete(btn.dataset.id));
         });
+
+        tb.querySelectorAll('[data-action="restore"]').forEach(btn => {
+            btn.addEventListener("click", () => askRestore(btn.dataset.id));
+        });
     }
 
     // hiển thị thông tin phân trang và khóa/mở nút Prev Next
@@ -315,7 +346,8 @@ StoreApp.pages.adminProducts = (() => {
         if (info) {
             const from = state.totalCount === 0 ? 0 : ((state.pageNumber - 1) * state.pageSize) + 1;    // bản ghi đầu tiên
             const to = Math.min(state.pageNumber * state.pageSize, state.totalCount);                   // bản ghi cuối cùng
-            info.textContent = `Trang ${state.pageNumber} / ${state.totalPages} • ${from}-${to} / ${state.totalCount}`;
+            const modeText = state.isDeletedView ? "Đã xóa" : "Đang bán";
+            info.textContent = `${modeText} • Trang ${state.pageNumber} / ${state.totalPages} • ${from}-${to} / ${state.totalCount}`;
         }
 
         if (prevBtn) prevBtn.disabled = state.pageNumber <= 1;
@@ -367,6 +399,11 @@ StoreApp.pages.adminProducts = (() => {
     // mở modal tạo mới product và reset các input
 
     function openCreateModal() {
+        if (state.isDeletedView) {
+            msg.show("prodMsg", "Không thể thêm mới trong danh sách sản phẩm đã xóa.", "error");
+            return;
+        }
+
         state.mode = "create";
         state.editId = null;
         state.imageUrl = "";
@@ -390,6 +427,11 @@ StoreApp.pages.adminProducts = (() => {
     // mở modal sửa và đổ dữ liệu product cần sửa vào form
 
     function openEditModal(id) {
+        if (state.isDeletedView) {
+            msg.show("prodMsg", "Sản phẩm đã xóa chỉ có thể khôi phục, không sửa trực tiếp.", "error");
+            return;
+        }
+
         const item = state.items.find(x =>
             String(x.id).toLowerCase() === String(id).toLowerCase()
         );
@@ -570,7 +612,7 @@ StoreApp.pages.adminProducts = (() => {
 
         const label = item?.productName ? `"${item.productName}"` : "product này";
 
-        if (!confirm(`Xoá ${label}?`)) return;
+        if (!confirm(`Xóa mềm ${label}? Sản phẩm sẽ chuyển sang danh sách đã xóa.`)) return;
         deleteProduct(id);
     }
 
@@ -597,7 +639,42 @@ StoreApp.pages.adminProducts = (() => {
 
         await loadProducts(false);
 
-        msg.show("prodMsg", "Đã xoá.", "success");
+        msg.show("prodMsg", "Đã xóa mềm sản phẩm.", "success");
+        setTimeout(() => msg.show("prodMsg", ""), 1800);
+    }
+
+    function askRestore(id) {
+        const item = state.items.find(x =>
+            String(x.id).toLowerCase() === String(id).toLowerCase()
+        );
+
+        const label = item?.productName ? `"${item.productName}"` : "product này";
+        if (!confirm(`Khôi phục ${label}?`)) return;
+        restoreProduct(id);
+    }
+
+    async function restoreProduct(id) {
+        msg.show("prodMsg", "Đang khôi phục...", "warn");
+
+        const result = await http.request("PUT", `${API.product}/${encodeURIComponent(id)}/restore`);
+
+        if (!result.res) {
+            msg.show("prodMsg", result.raw || "Không gọi được API.", "error");
+            return;
+        }
+
+        if (!result.res.ok) {
+            msg.show("prodMsg", http.getErrorText(result), "error");
+            return;
+        }
+
+        if (state.items.length === 1 && state.pageNumber > 1) {
+            state.pageNumber--;
+        }
+
+        await loadProducts(false);
+
+        msg.show("prodMsg", "Đã khôi phục sản phẩm.", "success");
         setTimeout(() => msg.show("prodMsg", ""), 1800);
     }
 
