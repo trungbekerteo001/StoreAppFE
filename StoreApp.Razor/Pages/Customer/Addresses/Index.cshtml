@@ -1,0 +1,59 @@
+@page "/customer/addresses"
+@{
+    ViewData["Title"] = "Địa chỉ giao hàng";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/customer-addresses.css" asp-append-version="true" />
+}
+
+<div class="customer-address-page">
+    <div class="section-head">
+        <div>
+            <h2>Địa chỉ giao hàng</h2>
+            <div class="muted">Quản lý địa chỉ của tài khoản đang đăng nhập</div>
+        </div>
+
+        <a class="btn-secondary small" href="/customer/cart">← Về giỏ hàng</a>
+    </div>
+
+    <div id="addrMsg" class="msg" style="display:none"></div>
+
+    <div class="address-layout">
+        <div class="address-form-card">
+            <h3 id="addrFormTitle">Thêm địa chỉ mới</h3>
+
+            <input type="hidden" id="addrId" />
+
+            <label class="field-label" for="addrReceiverName">Tên người nhận</label>
+            <input id="addrReceiverName" class="order-input" type="text" placeholder="Ví dụ: Nguyễn Văn A" />
+
+            <label class="field-label" for="addrPhone">Số điện thoại</label>
+            <input id="addrPhone" class="order-input" type="text" placeholder="Ví dụ: 0901234567" />
+
+            <label class="field-label" for="addrAddressLine">Địa chỉ cụ thể</label>
+            <textarea id="addrAddressLine" class="order-input address-textarea" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành..."></textarea>
+
+            <label class="check-row" for="addrIsDefault">
+                <input id="addrIsDefault" type="checkbox" />
+                Đặt làm địa chỉ mặc định
+            </label>
+
+            <div class="form-actions">
+                <button id="btnAddrSave" class="btn-primary small" type="button">Lưu địa chỉ</button>
+                <button id="btnAddrReset" class="btn-secondary small" type="button">Làm mới</button>
+            </div>
+        </div>
+
+        <div class="address-list-card">
+            <h3>Danh sách địa chỉ</h3>
+            <div id="addressList">
+                <div class="empty-box">Đang tải địa chỉ...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/pages/customer/addresses.js" asp-append-version="true"></script>
+}

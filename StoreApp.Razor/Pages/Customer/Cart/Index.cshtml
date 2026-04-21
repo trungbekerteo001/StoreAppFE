@@ -1,4 +1,4 @@
-﻿@page "/customer/cart"
+@page "/customer/cart"
 @{
     ViewData["Title"] = "Giỏ hàng";
 }
@@ -50,8 +50,11 @@
                 </button>
 
                 <div class="order-form">
-                    <label class="field-label" for="orderAddress">Địa chỉ giao hàng</label>
-                    <input id="orderAddress" class="order-input" type="text" placeholder="Nhập địa chỉ giao hàng..." />
+                    <label class="field-label" for="orderAddressId">Địa chỉ giao hàng</label>
+                    <select id="orderAddressId" class="order-select">
+                        <option value="">Đang tải địa chỉ...</option>
+                    </select>
+                    <a class="address-manage-link" href="/customer/addresses">+ Thêm / sửa địa chỉ giao hàng</a>
 
                     <label class="field-label" for="paymentMethod">Phương thức thanh toán</label>
                     <select id="paymentMethod" class="order-select">

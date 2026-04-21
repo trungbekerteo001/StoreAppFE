@@ -1,23 +1,19 @@
-﻿window.StoreApp = window.StoreApp || {};                // object toàn cục
-window.StoreApp.pages = window.StoreApp.pages || {};    // object con để chứa logic riêng của từng page
+﻿window.StoreApp = window.StoreApp || {};
+window.StoreApp.pages = window.StoreApp.pages || {};
 
-    // IIFE - toàn bộ hàm và biến của page chỉ dùng trong phạm vi này để tránh xung đột tên
 StoreApp.pages.customerHome = (() => {
-    const dom = StoreApp.dom;               // chứa các phương thức thao tác DOM
-    const http = StoreApp.http;             // chứa phương thức request để gọi API
-    const role = StoreApp.role;             // chứa phương thức guard và decode role/token
-    const msg = StoreApp.message;           // chứa phương thức show để hiển thị thông báo
-    const pager = StoreApp.pager;           // chứa helper đọc metadata phân trang
+    const dom = StoreApp.dom;
+    const http = StoreApp.http;
+    const msg = StoreApp.message;
+    const pager = StoreApp.pager;
 
-    const API = {                       // chứa endpoint API dùng trong page này
+    const API = {
         product: "/api/Product",
         category: "/api/Category",
         supplier: "/api/Supplier"
     };
 
-    const CART_KEY = "customer_cart";
-
-    const state = {                     // state để lưu trạng thái hiện tại của page
+    const state = {
         pageNumber: 1,
         pageSize: 8,
         totalPages: 1,
@@ -30,18 +26,13 @@ StoreApp.pages.customerHome = (() => {
         suppliers: []
     };
 
-    // khi DOM đã sẵn sàng thì gọi hàm initPage để khởi tạo page
     document.addEventListener("DOMContentLoaded", initPage);
-
-    // hàm khởi tạo trang chủ customer: kiểm tra role, gán event, tải lookup rồi load sản phẩm
 
     async function initPage() {
         bindEvents();
         await loadLookups();
         await loadProducts();
     }
-
-    // gom toàn bộ event của page sản phẩm vào một chỗ
 
     function bindEvents() {
         dom.byId("btnCusSearch")?.addEventListener("click", reloadProducts);
@@ -65,8 +56,6 @@ StoreApp.pages.customerHome = (() => {
         });
     }
 
-    // tải category và supplier để khi xem chi tiết có thể map id sang tên
-
     async function loadLookups() {
         const catResult = await http.request("GET", `${API.category}?PageNumber=1&PageSize=100`);
         state.categories = (catResult?.res?.ok && Array.isArray(catResult.data)) ? catResult.data : [];
@@ -75,25 +64,21 @@ StoreApp.pages.customerHome = (() => {
         state.suppliers = (supResult?.res?.ok && Array.isArray(supResult.data)) ? supResult.data : [];
     }
 
-    // map categoryId sang tên category từ cache
-
     function categoryName(id) {
         const item = state.categories.find(x =>
             String(x.id).toLowerCase() === String(id).toLowerCase()
         );
+
         return item?.name || "";
     }
-
-    // map supplierId sang tên supplier từ cache
 
     function supplierName(id) {
         const item = state.suppliers.find(x =>
             String(x.id).toLowerCase() === String(id).toLowerCase()
         );
+
         return item?.name || "";
     }
-
-    // load danh sách product theo keyword và phân trang
 
     async function loadProducts(clearMessage = true) {
         if (clearMessage) msg.show("cusMsg", "");
@@ -105,7 +90,6 @@ StoreApp.pages.customerHome = (() => {
 
         const keyword = dom.value("prdKeyword");
 
-        // tạo queryString để gửi filter / phân trang lên API
         const qs = new URLSearchParams();
         qs.set("PageNumber", String(state.pageNumber));
         qs.set("PageSize", String(state.pageSize));
@@ -135,8 +119,6 @@ StoreApp.pages.customerHome = (() => {
         renderProducts();
         renderPager();
     }
-
-    // render danh sách sản phẩm ra grid và gán event cho card / nút thao tác
 
     function renderProducts() {
         const grid = dom.byId("productGrid");
@@ -182,12 +164,10 @@ StoreApp.pages.customerHome = (() => {
             `;
         }).join("");
 
-        // gán sự kiện click cho cả card để mở modal chi tiết
         grid.querySelectorAll("[data-open-id]").forEach(card => {
             card.addEventListener("click", () => openDetail(card.dataset.openId));
         });
 
-        // gán sự kiện cho nút xem chi tiết riêng, đồng thời chặn nổi bọt event của card
         grid.querySelectorAll("[data-view-id]").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 e.stopPropagation();
@@ -195,16 +175,14 @@ StoreApp.pages.customerHome = (() => {
             });
         });
 
-        // gán sự kiện cho nút thêm vào giỏ ngay trên danh sách sản phẩm
         grid.querySelectorAll("[data-add-id]").forEach(btn => {
-            btn.addEventListener("click", (e) => {
+            btn.addEventListener("click", async (e) => {
                 e.stopPropagation();
-                addToCartFromList(btn.dataset.addId);
+                await addToCartFromList(btn.dataset.addId);
             });
         });
     }
 
-    // hiển thị trạng thái phân trang ở cuối danh sách sản phẩm
     function renderPager() {
         const pagerEl = dom.byId("pager");
         const info = dom.byId("pagerInfo");
@@ -220,15 +198,11 @@ StoreApp.pages.customerHome = (() => {
         nextBtn.disabled = state.pageNumber >= state.totalPages;
     }
 
-    // lùi về trang trước
-
     function prevPage() {
         if (state.pageNumber <= 1) return;
         state.pageNumber--;
         loadProducts(false);
     }
-
-    // sang trang tiếp theo
 
     function nextPage() {
         if (state.pageNumber >= state.totalPages) return;
@@ -236,14 +210,10 @@ StoreApp.pages.customerHome = (() => {
         loadProducts(false);
     }
 
-    // tải lại sản phẩm từ trang 1
-
     function reloadProducts() {
         state.pageNumber = 1;
         loadProducts();
     }
-
-    // mở modal chi tiết và load thông tin chi tiết của 1 sản phẩm từ API
 
     async function openDetail(id) {
         const modal = dom.byId("productDetailModal");
@@ -257,6 +227,7 @@ StoreApp.pages.customerHome = (() => {
         modal.classList.add("show");
 
         const result = await http.request("GET", `${API.product}/${id}`);
+
         if (!result.res) {
             body.innerHTML = `<div class="empty-box">Không gọi được API chi tiết sản phẩm.</div>`;
             return;
@@ -300,43 +271,27 @@ StoreApp.pages.customerHome = (() => {
         if (addBtn) addBtn.disabled = soldOut;
     }
 
-    // đóng modal chi tiết sản phẩm
-
     function closeDetailModal() {
         const modal = dom.byId("productDetailModal");
         if (modal) modal.classList.remove("show");
     }
 
-    // đọc giỏ hàng từ localStorage
-
-    function readCart() {
-        try {
-            const raw = localStorage.getItem(CART_KEY);
-            const arr = raw ? JSON.parse(raw) : [];
-            return Array.isArray(arr) ? arr : [];
-        } catch {
-            return [];
-        }
-    }
-
-    // ghi giỏ hàng xuống localStorage
-
-    function writeCart(items) {
-        localStorage.setItem(CART_KEY, JSON.stringify(items || []));
-    }
-
-    // thêm 1 sản phẩm vào giỏ hàng nếu còn tồn kho và chưa tồn tại trong giỏ
-
-    function addProductToCart(product, messageTargetId) {
-        // kiểm tra đã đăng nhập chưa bằng cách xem token
+    async function addProductToCart(product, messageTargetId) {
         const token = StoreApp.auth.getAccessToken();
 
         if (!token) {
             msg.show(messageTargetId, "Bạn phải đăng nhập để mua hàng.", "warn");
-            // cho 1s đọc thông báo rồi đi đăng nhập 
+
             setTimeout(() => {
                 window.location.href = "/Auth/Login";
             }, 1000);
+
+            return;
+        }
+
+        const currentRole = String(StoreApp.role?.getRoleFromToken(token) || "").toLowerCase();
+        if (currentRole !== "customer") {
+            msg.show(messageTargetId, "Chỉ tài khoản Customer mới được thêm sản phẩm vào giỏ hàng.", "warn");
             return;
         }
 
@@ -345,54 +300,66 @@ StoreApp.pages.customerHome = (() => {
             return;
         }
 
-        const quantity = Number(product.quantity || 0);
-        if (quantity <= 0) {
+        const productId = product.id;
+        const maxQuantity = Number(product.quantity || 0);
+
+        if (!productId) {
+            msg.show(messageTargetId, "Sản phẩm không hợp lệ.", "error");
+            return;
+        }
+
+        if (maxQuantity <= 0) {
             msg.show(messageTargetId, "Sản phẩm hiện đã hết hàng.", "warn");
             return;
         }
 
-        const cart = readCart();
+        const CART_KEY = "customer_cart";
+        let cart = [];
 
-        const found = cart.find(x =>
-            String(x.productId).toLowerCase() === String(product.id).toLowerCase()
-        );
-
-        if (found) {
-            msg.show(messageTargetId, "Sản phẩm đã có trong giỏ hàng.", "warn");
-            return;
+        try {
+            const raw = localStorage.getItem(CART_KEY);
+            const parsed = raw ? JSON.parse(raw) : [];
+            cart = Array.isArray(parsed) ? parsed : [];
+        } catch {
+            cart = [];
         }
 
-        cart.push({
-            productId: product.id,
-            productName: product.productName,
-            price: product.price,
-            imageUrl: product.imageUrl || "",
-            quantity: 1,
-            maxQuantity: quantity
-        });
+        const existing = cart.find(x =>
+            String(x.productId || "").toLowerCase() === String(productId).toLowerCase()
+        );
 
-        writeCart(cart);
+        if (existing) {
+            const currentQty = Number(existing.quantity || 0);
+
+            if (currentQty >= maxQuantity) {
+                msg.show(messageTargetId, "Số lượng trong giỏ đã đạt tối đa tồn kho.", "warn");
+                return;
+            }
+
+            existing.quantity = currentQty + 1;
+        } else {
+            cart.push({
+                productId: productId,
+                quantity: 1
+            });
+        }
+
+        localStorage.setItem(CART_KEY, JSON.stringify(cart));
         msg.show(messageTargetId, "Đã thêm vào giỏ hàng.", "success");
     }
 
-    // thêm sản phẩm đang mở trong modal chi tiết vào giỏ hàng
-
-    function addCurrentToCart() {
-        addProductToCart(state.current, "detailMsg");
+    async function addCurrentToCart() {
+        await addProductToCart(state.current, "detailMsg");
     }
 
-    // thêm sản phẩm trực tiếp từ danh sách product vào giỏ hàng
-
-    function addToCartFromList(id) {
+    async function addToCartFromList(id) {
         const product = state.items.find(x =>
             String(x.id).toLowerCase() === String(id).toLowerCase()
         );
 
-        addProductToCart(product, "cusMsg");
+        await addProductToCart(product, "cusMsg");
         setTimeout(() => msg.show("cusMsg", ""), 1800);
     }
-
-    // format tiền tệ theo kiểu Việt Nam
 
     function money(v) {
         const n = Number(v || 0);
