@@ -339,3 +339,85 @@
     .card-btn.secondary:hover {
         background: #cbd5e1;
     }
+
+.review-summary {
+    margin: 10px 0 14px;
+    font-weight: 700;
+    color: #f59e0b;
+}
+
+    .review-summary span {
+        color: #64748b;
+        font-weight: 500;
+    }
+
+.review-section {
+    margin-top: 20px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 16px;
+}
+
+    .review-section h4 {
+        margin: 0 0 12px;
+        color: #0f172a;
+    }
+
+.review-form {
+    display: grid;
+    grid-template-columns: 120px 1fr auto;
+    gap: 10px;
+    align-items: start;
+    margin-bottom: 14px;
+}
+
+    .review-form select,
+    .review-form textarea {
+        border: 1px solid #dbe2ea;
+        border-radius: 12px;
+        padding: 10px 12px;
+        outline: none;
+        font-family: inherit;
+    }
+
+.review-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.review-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 12px;
+    background: #f8fafc;
+}
+
+.review-item-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: #f59e0b;
+    margin-bottom: 6px;
+}
+
+    .review-item-head span {
+        color: #64748b;
+        font-size: 13px;
+    }
+
+.review-comment {
+    color: #334155;
+    white-space: pre-wrap;
+}
+
+@media (max-width: 760px) {
+    .review-form {
+        grid-template-columns: 1fr;
+    }
+}
+
+.review-customer-name {
+    margin-left: 8px;
+    color: #0f172a;
+    font-weight: 600;
+}
