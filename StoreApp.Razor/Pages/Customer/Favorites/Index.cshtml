@@ -1,0 +1,35 @@
+﻿@page "/customer/favorites"
+@{
+    ViewData["Title"] = "Sản phẩm yêu thích";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/customer-home.css" asp-append-version="true" />
+}
+
+<div class="customer-home">
+    <div class="customer-section">
+        <div class="section-head">
+            <div>
+                <h2>Sản phẩm yêu thích</h2>
+                <div class="muted">Danh sách sản phẩm bạn đã lưu</div>
+            </div>
+        </div>
+
+        <div id="favMsg" class="msg" style="display:none"></div>
+
+        <div id="favoriteGrid" class="product-grid">
+            <div class="empty-box">Đang tải sản phẩm yêu thích...</div>
+        </div>
+
+        <div class="pager" id="favPager" style="display:none">
+            <button class="pager-btn" type="button" id="btnFavPrev">← Trước</button>
+            <div class="pager-info" id="favPagerInfo">Trang 1 / 1</div>
+            <button class="pager-btn" type="button" id="btnFavNext">Sau →</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/pages/customer/favorites.js" asp-append-version="true"></script>
+}

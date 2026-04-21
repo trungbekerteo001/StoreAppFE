@@ -339,3 +339,29 @@
     .card-btn.secondary:hover {
         background: #cbd5e1;
     }
+
+.card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.card-btn.favorite {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
+    .card-btn.favorite:hover {
+        background: #ffedd5;
+    }
+
+.card-btn.danger {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+    .card-btn.danger:hover {
+        background: #fecaca;
+    }
