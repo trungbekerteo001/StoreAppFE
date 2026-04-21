@@ -11,10 +11,13 @@ StoreApp.pages.customerCart = (() => {
 
     const API = {                       // chứa endpoint API dùng trong page này
         product: "/api/Product",
-        order: "/api/Order"
+        order: "/api/Order",
+        voucherAvailable: "/api/Voucher/available"
     };
 
     const CART_KEY = "customer_cart";
+
+    let availableVouchers = [];         // lưu voucher đang có hiệu lực để hiển thị và áp dụng khi tạo đơn hàng
 
     const state = {                     // state để lưu trạng thái hiện tại của page
         items: []
@@ -29,6 +32,10 @@ StoreApp.pages.customerCart = (() => {
         if (!role.guard(["Customer"])) return;
 
         bindEvents();
+
+        // Load voucher trước để khi renderSummary có thể tính giảm giá tạm tính
+        await loadAvailableVouchers();
+
         await loadCart();
     }
 
@@ -36,6 +43,7 @@ StoreApp.pages.customerCart = (() => {
     function bindEvents() {
         dom.byId("btnCartClear")?.addEventListener("click", clearCart);
         dom.byId("btnCreateOrder")?.addEventListener("click", createOrder);
+        dom.byId("voucherCode")?.addEventListener("change", renderSummary);
 
         document.addEventListener("click", (e) => {         // sự kiện click chung cho tất cả nút tăng, giảm, xóa trong giỏ hàng nhờ data attribute
             const btn = e.target.closest("[data-cart-action]");
@@ -111,6 +119,45 @@ StoreApp.pages.customerCart = (() => {
         renderSummary();
     }
 
+    async function loadAvailableVouchers() {
+        const select = dom.byId("voucherCode");
+        const hint = dom.byId("voucherHint");
+
+        if (!select) return;
+
+        select.innerHTML = `<option value="">Đang tải voucher...</option>`;
+
+        const result = await http.request("GET", API.voucherAvailable);
+
+        if (!result.res || !result.res.ok) {
+            availableVouchers = [];
+            select.innerHTML = `<option value="">Không dùng voucher</option>`;
+
+            if (hint) {
+                hint.textContent = "Không tải được danh sách voucher.";
+            }
+
+            return;
+        }
+
+        availableVouchers = Array.isArray(result.data) ? result.data : [];
+
+        select.innerHTML = `
+        <option value="">Không dùng voucher</option>
+        ${availableVouchers.map(v => `
+            <option value="${dom.escAttr(v.code)}">
+                ${dom.esc(v.code)} - giảm ${v.discountPercent}% tối đa ${money(v.maxDiscountAmount)}
+            </option>
+        `).join("")}
+    `;
+
+        if (hint) {
+            hint.textContent = availableVouchers.length
+                ? "Chỉ hiển thị voucher còn hạn và còn số lượng."
+                : "Hiện chưa có voucher khả dụng.";
+        }
+    }
+
     // render toàn bộ sản phẩm đang có trong giỏ hàng
 
     function renderCart() {
@@ -174,8 +221,10 @@ StoreApp.pages.customerCart = (() => {
         const itemKinds = dom.byId("sumItemKinds");
         const quantity = dom.byId("sumQuantity");
         const amount = dom.byId("sumAmount");
+        const discount = dom.byId("sumDiscount");
+        const finalAmountEl = dom.byId("sumFinalAmount");
 
-        if (!itemKinds || !quantity || !amount) return;
+        if (!itemKinds || !quantity || !amount || !discount || !finalAmountEl) return;
 
         let totalQuantity = 0;
         let totalAmount = 0;
@@ -188,9 +237,28 @@ StoreApp.pages.customerCart = (() => {
             totalAmount += q * p;
         }
 
+        const selectedCode = dom.byId("voucherCode")?.value || "";
+        const selectedVoucher = availableVouchers.find(x => x.code === selectedCode);
+
+        let discountAmount = 0;
+
+        if (selectedVoucher) {
+            const percent = Number(selectedVoucher.discountPercent || 0);
+            const maxDiscount = Number(selectedVoucher.maxDiscountAmount || 0);
+
+            discountAmount = Math.min(
+                totalAmount * percent / 100,
+                maxDiscount
+            );
+        }
+
+        const finalAmount = Math.max(0, totalAmount - discountAmount);
+
         itemKinds.textContent = String(state.items.length);
         quantity.textContent = String(totalQuantity);
         amount.textContent = money(totalAmount);
+        discount.textContent = money(discountAmount);
+        finalAmountEl.textContent = money(finalAmount);
     }
 
     // tăng số lượng 1 sản phẩm nhưng không vượt quá tồn kho hiện tại
@@ -324,10 +392,13 @@ StoreApp.pages.customerCart = (() => {
             return;
         }
 
+        const voucherCode = dom.byId("voucherCode")?.value?.trim() || "";
+
         const body = {
             customerId: customerId,
             address: address,
             paymentMethod: paymentValue,
+            voucherCode: voucherCode || null,
             items: cart.map(x => ({
                 productId: x.productId,
                 quantity: Number(x.quantity || 0),

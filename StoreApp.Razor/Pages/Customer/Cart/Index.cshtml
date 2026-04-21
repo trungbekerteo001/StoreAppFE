@@ -40,9 +40,19 @@
                     <strong id="sumQuantity">0</strong>
                 </div>
 
-                <div class="summary-row total">
-                    <span>Tổng tiền</span>
+                <div class="summary-row">
+                    <span>Tạm tính</span>
                     <strong id="sumAmount">0 đ</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Giảm giá</span>
+                    <strong id="sumDiscount">0 đ</strong>
+                </div>
+
+                <div class="summary-row total">
+                    <span>Thanh toán</span>
+                    <strong id="sumFinalAmount">0 đ</strong>
                 </div>
 
                 <button class="btn-secondary small summary-btn" type="button" id="btnCartClear">
@@ -50,6 +60,11 @@
                 </button>
 
                 <div class="order-form">
+                    <label class="field-label" for="voucherCode">Mã giảm giá</label>
+                    <select id="voucherCode" class="order-input">
+                        <option value="">Không dùng voucher</option>
+                    </select>
+                    <div id="voucherHint" class="muted"></div>
                     <label class="field-label" for="orderAddress">Địa chỉ giao hàng</label>
                     <input id="orderAddress" class="order-input" type="text" placeholder="Nhập địa chỉ giao hàng..." />
 
