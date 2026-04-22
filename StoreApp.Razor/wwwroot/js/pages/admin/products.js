@@ -63,12 +63,17 @@ StoreApp.pages.adminProducts = (() => {
         dom.byId("prodSaveBtn")?.addEventListener("click", saveProduct);
         dom.byId("changeSizeBtn")?.addEventListener("click", reLoadProducts);
         
-        dom.byId("kw")?.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                searchProducts();
-            }
+        ["kw", "minPrice", "maxPrice", "minQuantity", "maxQuantity"].forEach(id => {
+            dom.byId(id)?.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    searchProducts();
+                }
+            });
         });
+
+        dom.byId("sortBy")?.addEventListener("change", searchProducts);
+        dom.byId("isDescending")?.addEventListener("change", searchProducts);
 
         document.addEventListener("keydown", (e) => {
             if (e.key === "Escape") closeModal();
@@ -211,6 +216,10 @@ StoreApp.pages.adminProducts = (() => {
         const supId = dom.byId("supFilter")?.value?.trim() || "";
         const minPrice = dom.byId("minPrice")?.value?.trim() || "";
         const maxPrice = dom.byId("maxPrice")?.value?.trim() || "";
+        const minQuantity = dom.byId("minQuantity")?.value?.trim() || "";
+        const maxQuantity = dom.byId("maxQuantity")?.value?.trim() || "";
+        const sortBy = dom.byId("sortBy")?.value?.trim() || "CreatedAt";
+        const isDescending = dom.byId("isDescending")?.value?.trim() || "true";
 
         // tạo queryString để gửi filter / phân trang lên API
         const qs = new URLSearchParams();
@@ -222,6 +231,11 @@ StoreApp.pages.adminProducts = (() => {
         if (supId) qs.set("SupplierId", supId);
         if (minPrice) qs.set("MinPrice", minPrice);
         if (maxPrice) qs.set("MaxPrice", maxPrice);
+        if (minQuantity) qs.set("MinQuantity", minQuantity);
+        if (maxQuantity) qs.set("MaxQuantity", maxQuantity);
+
+        qs.set("SortBy", sortBy);
+        qs.set("IsDescending", isDescending);
 
         const result = await http.request("GET", `${API.product}?${qs.toString()}`);
 
@@ -337,12 +351,20 @@ StoreApp.pages.adminProducts = (() => {
         const sup = dom.byId("supFilter");
         const min = dom.byId("minPrice");
         const max = dom.byId("maxPrice");
+        const minQty = dom.byId("minQuantity");
+        const maxQty = dom.byId("maxQuantity");
+        const sortBy = dom.byId("sortBy");
+        const isDesc = dom.byId("isDescending");
 
         if (kw) kw.value = "";
         if (cat) cat.value = "";
         if (sup) sup.value = "";
         if (min) min.value = "";
         if (max) max.value = "";
+        if (minQty) minQty.value = "";
+        if (maxQty) maxQty.value = "";
+        if (sortBy) sortBy.value = "CreatedAt";
+        if (isDesc) isDesc.value = "true";
 
         state.pageNumber = 1;
         loadProducts();

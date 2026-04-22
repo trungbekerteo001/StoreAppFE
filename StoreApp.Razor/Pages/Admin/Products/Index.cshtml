@@ -27,6 +27,21 @@
                 <input id="minPrice" type="number" inputmode="decimal" step="1000" placeholder="Giá từ" />
                 <input id="maxPrice" type="number" inputmode="decimal" step="1000" placeholder="Giá đến" />
 
+                <input id="minQuantity" type="number" inputmode="numeric" step="1" placeholder="SL từ" />
+                <input id="maxQuantity" type="number" inputmode="numeric" step="1" placeholder="SL đến" />
+
+                <select id="sortBy" aria-label="Sắp xếp theo">
+                    <option value="CreatedAt">Ngày tạo</option>
+                    <option value="ProductName">Tên sản phẩm</option>
+                    <option value="Price">Giá</option>
+                    <option value="Quantity">Số lượng</option>
+                </select>
+
+                <select id="isDescending" aria-label="Thứ tự sắp xếp">
+                    <option value="true">Giảm dần</option>
+                    <option value="false">Tăng dần</option>
+                </select>
+
                 <input id="kw" type="text" placeholder="Tìm theo keyword..." />
                 <button class="btn" type="button" id="btnProdSearch">Tìm</button>
                 <button class="btn" type="button" id="btnProdClear">Reset</button>

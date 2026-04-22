@@ -15,9 +15,37 @@
                 <div class="muted">Phân trang từ API Product</div>
             </div>
 
-            <div class="product-toolbar">
+            <div class="product-toolbar customer-filter-panel">
                 <input id="prdKeyword" type="text" placeholder="Tìm theo tên sản phẩm..." />
+
+                <select id="cusCatFilter">
+                    <option value="">Tất cả danh mục</option>
+                </select>
+
+                <select id="cusSupFilter">
+                    <option value="">Tất cả nhà cung cấp</option>
+                </select>
+
+                <input id="cusMinPrice" type="number" step="1000" placeholder="Giá từ" />
+                <input id="cusMaxPrice" type="number" step="1000" placeholder="Giá đến" />
+
+                <input id="cusMinQuantity" type="number" step="1" placeholder="SL từ" />
+                <input id="cusMaxQuantity" type="number" step="1" placeholder="SL đến" />
+
+                <select id="cusSortBy">
+                    <option value="CreatedAt">Ngày tạo</option>
+                    <option value="ProductName">Tên sản phẩm</option>
+                    <option value="Price">Giá</option>
+                    <option value="Quantity">Số lượng</option>
+                </select>
+
+                <select id="cusIsDescending">
+                    <option value="true">Giảm dần</option>
+                    <option value="false">Tăng dần</option>
+                </select>
+
                 <button class="btn-primary small" type="button" id="btnCusSearch">Tìm</button>
+                <button class="btn-secondary small" type="button" id="btnCusClear">Xóa lọc</button>
             </div>
         </div>
 

@@ -45,6 +45,8 @@ StoreApp.pages.customerHome = (() => {
 
     function bindEvents() {
         dom.byId("btnCusSearch")?.addEventListener("click", reloadProducts);
+        dom.byId("btnCusClear")?.addEventListener("click", clearFilters);
+
         dom.byId("btnPrev")?.addEventListener("click", prevPage);
         dom.byId("btnNext")?.addEventListener("click", nextPage);
 
@@ -53,11 +55,28 @@ StoreApp.pages.customerHome = (() => {
         dom.byId("cusDetailBackdrop")?.addEventListener("click", closeDetailModal);
         dom.byId("btnAddToCart")?.addEventListener("click", addCurrentToCart);
 
-        dom.byId("prdKeyword")?.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                reloadProducts();
-            }
+        [
+            "prdKeyword",
+            "cusMinPrice",
+            "cusMaxPrice",
+            "cusMinQuantity",
+            "cusMaxQuantity"
+        ].forEach(id => {
+            dom.byId(id)?.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    reloadProducts();
+                }
+            });
+        });
+
+        [
+            "cusCatFilter",
+            "cusSupFilter",
+            "cusSortBy",
+            "cusIsDescending"
+        ].forEach(id => {
+            dom.byId(id)?.addEventListener("change", reloadProducts);
         });
 
         document.addEventListener("keydown", (e) => {
@@ -68,11 +87,61 @@ StoreApp.pages.customerHome = (() => {
     // tải category và supplier để khi xem chi tiết có thể map id sang tên
 
     async function loadLookups() {
-        const catResult = await http.request("GET", `${API.category}?PageNumber=1&PageSize=100`);
-        state.categories = (catResult?.res?.ok && Array.isArray(catResult.data)) ? catResult.data : [];
+        state.categories = await loadAllPaged(API.category);
+        state.suppliers = await loadAllPaged(API.supplier);
 
-        const supResult = await http.request("GET", `${API.supplier}?PageNumber=1&PageSize=100`);
-        state.suppliers = (supResult?.res?.ok && Array.isArray(supResult.data)) ? supResult.data : [];
+        fillSelect("cusCatFilter", state.categories, "Tất cả danh mục");
+        fillSelect("cusSupFilter", state.suppliers, "Tất cả nhà cung cấp");
+    }
+
+    async function loadAllPaged(endpoint) {
+        const allItems = [];
+        const pageSize = 200;
+        let pageNumber = 1;
+        let totalPages = 1;
+
+        while (pageNumber <= totalPages) {
+            const qs = new URLSearchParams();
+            qs.set("PageNumber", String(pageNumber));
+            qs.set("PageSize", String(pageSize));
+
+            const result = await http.request("GET", `${endpoint}?${qs.toString()}`);
+
+            if (!result?.res?.ok || !Array.isArray(result.data)) {
+                break;
+            }
+
+            allItems.push(...result.data);
+
+            const meta = pager.readMeta(result, result.data.length);
+            totalPages = Math.max(1, Number(meta.totalPages || 1));
+            pageNumber++;
+        }
+
+        const seen = new Set();
+
+        return allItems.filter(x => {
+            const key = String(x?.id || "").toLowerCase();
+            if (!key || seen.has(key)) return false;
+
+            seen.add(key);
+            return true;
+        });
+    }
+
+    function fillSelect(id, items, firstText) {
+        const el = dom.byId(id);
+        if (!el) return;
+
+        const options = [`<option value="">${dom.esc(firstText)}</option>`];
+
+        for (const item of (items || [])) {
+            options.push(
+                `<option value="${dom.escAttr(item.id)}">${dom.esc(item.name || item.id)}</option>`
+            );
+        }
+
+        el.innerHTML = options.join("");
     }
 
     // map categoryId sang tên category từ cache
@@ -104,12 +173,30 @@ StoreApp.pages.customerHome = (() => {
         }
 
         const keyword = dom.value("prdKeyword");
+        const categoryId = dom.byId("cusCatFilter")?.value?.trim() || "";
+        const supplierId = dom.byId("cusSupFilter")?.value?.trim() || "";
+        const minPrice = dom.byId("cusMinPrice")?.value?.trim() || "";
+        const maxPrice = dom.byId("cusMaxPrice")?.value?.trim() || "";
+        const minQuantity = dom.byId("cusMinQuantity")?.value?.trim() || "";
+        const maxQuantity = dom.byId("cusMaxQuantity")?.value?.trim() || "";
+        const sortBy = dom.byId("cusSortBy")?.value?.trim() || "CreatedAt";
+        const isDescending = dom.byId("cusIsDescending")?.value?.trim() || "true";
 
         // tạo queryString để gửi filter / phân trang lên API
         const qs = new URLSearchParams();
         qs.set("PageNumber", String(state.pageNumber));
         qs.set("PageSize", String(state.pageSize));
+
         if (keyword) qs.set("Keyword", keyword);
+        if (categoryId) qs.set("CategoryId", categoryId);
+        if (supplierId) qs.set("SupplierId", supplierId);
+        if (minPrice) qs.set("MinPrice", minPrice);
+        if (maxPrice) qs.set("MaxPrice", maxPrice);
+        if (minQuantity) qs.set("MinQuantity", minQuantity);
+        if (maxQuantity) qs.set("MaxQuantity", maxQuantity);
+
+        qs.set("SortBy", sortBy);
+        qs.set("IsDescending", isDescending);
 
         const result = await http.request("GET", `${API.product}?${qs.toString()}`);
 
@@ -234,6 +321,30 @@ StoreApp.pages.customerHome = (() => {
         if (state.pageNumber >= state.totalPages) return;
         state.pageNumber++;
         loadProducts(false);
+    }
+
+    function clearFilters() {
+        const keyword = dom.byId("prdKeyword");
+        const category = dom.byId("cusCatFilter");
+        const supplier = dom.byId("cusSupFilter");
+        const minPrice = dom.byId("cusMinPrice");
+        const maxPrice = dom.byId("cusMaxPrice");
+        const minQuantity = dom.byId("cusMinQuantity");
+        const maxQuantity = dom.byId("cusMaxQuantity");
+        const sortBy = dom.byId("cusSortBy");
+        const isDescending = dom.byId("cusIsDescending");
+
+        if (keyword) keyword.value = "";
+        if (category) category.value = "";
+        if (supplier) supplier.value = "";
+        if (minPrice) minPrice.value = "";
+        if (maxPrice) maxPrice.value = "";
+        if (minQuantity) minQuantity.value = "";
+        if (maxQuantity) maxQuantity.value = "";
+        if (sortBy) sortBy.value = "CreatedAt";
+        if (isDescending) isDescending.value = "true";
+
+        reloadProducts();
     }
 
     // tải lại sản phẩm từ trang 1
